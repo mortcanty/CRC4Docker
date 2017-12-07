@@ -1,0 +1,12 @@
+.. currentmodule:: mlpy
+
+Algorithms for Feature Weighting
+================================
+
+Iterative RELIEF
+----------------
+
+.. autoclass:: IRelief
+   :members:
+
+.. [Sun07] Yijun Sun. Iterative RELIEF for Feature Weighting: Algorithms, Theories, and Applications. IEEE Trans. Pattern Anal. Mach. Intell. 29(6): 1035-1051, 2007.

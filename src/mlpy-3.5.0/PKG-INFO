@@ -1,0 +1,28 @@
+Metadata-Version: 1.1
+Name: mlpy
+Version: 3.5.0
+Summary: mlpy - Machine Learning Py - High-Performance Python Package for Predictive Modeling
+Home-page: mlpy.sourceforge.net
+Author: Davide Albanese
+Author-email: davide.albanese@gmail.com
+License: GPLv3
+Download-URL: https://sourceforge.net/projects/mlpy/
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: Programming Language :: C
+Classifier: Programming Language :: C++
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: POSIX :: BSD
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Requires: numpy (>=1.3.0)
+Requires: scipy (>=0.7.0)
+Requires: gsl (>=1.11)

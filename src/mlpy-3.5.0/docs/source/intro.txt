@@ -1,0 +1,13 @@
+.. currentmodule:: mlpy
+
+Introduction
+============
+
+Conventions
+-----------
+
+ * `x` is a matrix :math:`n \times p` which represents a set of
+   :math:`n` samples in :math:`\Re^p`.
+ * `y` is a vector :math:`n` which represents the target values 
+   (integers in classification problems, floats in regression problems).
+ 

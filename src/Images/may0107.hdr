@@ -1,0 +1,16 @@
+ENVI
+description = {
+  Create New File Result [Thu Sep 04 13:54:08 2008]}
+samples = 1000
+lines   = 1000
+bands   = 9
+header offset = 0
+file type = ENVI Standard
+data type = 4
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+x start = 460
+y start = 313
+map info = {UTM, 1.000, 1.000, 313915.792, 5649400.493, 1.5000000000e+001, 1.5000000000e+001, 32, North, WGS-84, units=Meters, rotation=-16.35595519}
+wavelength units = Unknown

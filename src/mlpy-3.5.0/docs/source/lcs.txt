@@ -1,0 +1,14 @@
+.. currentmodule:: mlpy
+
+Longest Common Subsequence (LCS)
+================================
+
+Standard LCS
+------------
+
+.. autofunction:: lcs_std(x, y)
+
+LCS for real series
+-------------------
+
+.. autofunction:: lcs_real(x, y, eps, delta)

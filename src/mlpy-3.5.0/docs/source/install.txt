@@ -1,0 +1,55 @@
+Install
+=======
+
+Download
+--------
+
+Download latest version for your OS from  http://sourceforge.net/projects/mlpy/files/
+
+Installing on \*nix from source
+-------------------------------
+
+On GNU/Linux, OSX and FreeBSD you need the following requirements:
+
+   * GCC
+   * Python >= 2.6 or 3.X
+   * NumPy >= 1.3.0 (with header files)
+   * SciPy >= 0.7.0
+   * GSL >= 1.11 (with header files)
+
+From a terminal run:
+
+.. code-block:: sh
+
+   $ python setup.py install
+
+If you don't have root access, installing mlpy in a directory by
+specifying the ``--prefix`` argument. Then you need to set ``PYTHONPATH``:
+
+.. code-block:: sh
+
+   $ python setup.py install --prefix=/path/to/modules
+   $ export PYTHONPATH=$PYTHONPATH:/path/to/modules/lib/python{version}/site-packages
+
+If the GSL header files or shared library are in non-standard
+locations on your system, use the ``--include-dirs`` and 
+``--rpath`` options to ``build_ext``:
+
+.. code-block:: sh
+
+    $ python setup.py build_ext --include-dirs=/path/to/header --rpath=/path/to/lib
+    $ python setup.py install
+
+
+Installing on Windows Xp/Vista/7 from binary installer
+------------------------------------------------------
+
+Requirements:
+
+   * Python 2.6, 2.7, 3.1, 3.2 Windows installer (x86)
+   * NumPy >= 1.3.0 win32 installer
+   * SciPy >= 0.8.0 win32 installer
+
+The GSL library is pre-compiled (by Visual Studio Express 2008) and included in mlpy.
+
+Download and run the mlpy Windows installer (.exe).

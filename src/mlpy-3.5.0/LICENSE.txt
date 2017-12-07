@@ -1,0 +1,4 @@
+mlpy: See gpl-3.0.txt
+libsvm: See mlpy/libsvm/libsvm/COPYRIGHT
+liblinear: See mlpy/liblinear/liblinear/COPYRIGHT
+fastcluster: See gpl-3.0.txt

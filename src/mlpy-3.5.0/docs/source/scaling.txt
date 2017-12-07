@@ -1,0 +1,31 @@
+.. currentmodule:: mlpy
+
+Short Guide to Centering and Scaling
+====================================
+
+Centering:
+
+=================== =========================================
+1d array	    >>> x - np.mean(x)
+2d array along rows >>> x - np.mean(x, axis=1).reshape(-1, 1)
+2d array along cols >>> x - np.mean(x, axis=0)
+=================== =========================================
+
+Unit length scaling (normalization). Elements are scaled to
+have and unit length (:math:`\sum_{i=1}^n {x_{i}^2} = 1`):
+
+=================== ======================================================
+1d array	    >>> x / np.sqrt(np.sum((x)**2))
+2d array along rows >>> x / np.sqrt(np.sum((x)**2, axis=1)).reshape(-1, 1)
+2d array along cols >>> x / np.sqrt(np.sum((x)**2, axis=0))
+=================== ======================================================
+
+Standardization. Elements are scaled to have unit standard deviation.
+The standard deviation is computed using :math:`n-1` instead of
+:math:`n` (Bessel's correction).
+
+=================== =======================================================
+1d array	    >>> x / np.std(x, ddof=1) # ddof=1: Bessel's correction
+2d array along rows >>> x / np.std(x, axis=1, ddof=1).reshape(-1, 1)
+2d array along cols >>> x / np.std(x, axis=0, ddof=1)
+=================== =======================================================

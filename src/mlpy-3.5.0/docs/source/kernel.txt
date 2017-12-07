@@ -1,0 +1,142 @@
+.. currentmodule:: mlpy
+
+Kernels
+=======
+
+Kernel Functions
+----------------
+A kernel is a function :math:`\kappa` that for all 
+:math:`\mathbf{t}, \mathbf{x} \in X` satisfies :math:`\kappa(\mathbf{t},
+\mathbf{x}) = \langle\Phi(\mathbf{t}),\Phi(\mathbf{x})\rangle`,
+where :math:`\Phi` is a mapping from :math:`X` to an (inner product)
+feature space :math:`F`, :math:`\Phi : \mathbf{t} \longmapsto 
+\Phi(\mathbf{t}) \in F`.
+      
+The following functions take two array-like objects ``t`` (M, P) and 
+``x`` (N, P) and compute the (M, N) matrix :math:`\mathbf{K^t}`
+with entries
+    
+    .. math:: \mathbf{K^t}_{ij} = \kappa(\mathbf{t}_i, \mathbf{x}_j).
+
+
+Kernel Classes
+--------------
+
+.. autoclass:: Kernel
+
+.. autoclass:: KernelLinear
+
+.. autoclass:: KernelPolynomial
+
+.. autoclass:: KernelGaussian
+
+.. autoclass:: KernelExponential
+
+.. autoclass:: KernelSigmoid
+
+
+Functions
+---------
+
+.. function:: kernel_linear(t, x)
+   
+   Linear kernel, t_i' x_j.
+
+.. function:: kernel_polynomial(t, x, gamma=1.0, b=1.0, d=2.0)
+   
+   Polynomial kernel, (gamma t_i' x_j + b)^d.
+
+.. function:: kernel_gaussian(t, x, sigma=1.0)
+   
+   Gaussian kernel, exp(-||t_i - x_j||^2 / 2 * sigma^2).
+
+.. function:: kernel_exponential(t, x, sigma=1.0)
+   
+   Exponential kernel, exp(-||t_i - x_j|| / 2 * sigma^2).
+
+.. function:: kernel_sigmoid(t, x, gamma=1.0, b=1.0)
+   
+   Sigmoid kernel, tanh(gamma t_i' x_j + b).
+
+
+Example:
+
+>>> import mlpy
+>>> x = [[5, 1, 3, 1], [7, 1, 11, 4], [0, 4, 2, 9]] # three training points
+>>> K = mlpy.kernel_gaussian(x, x, sigma=10) # compute the kernel matrix K_ij = k(x_i, x_j)
+>>> K
+array([[ 1.        ,  0.68045064,  0.60957091],
+       [ 0.68045064,  1.        ,  0.44043165],
+       [ 0.60957091,  0.44043165,  1.        ]])
+>>> t = [[8, 1, 5, 1], [7, 1, 11, 4]] # two test points
+>>> Kt = mlpy.kernel_gaussian(t, x, sigma=10) # compute the test kernel matrix Kt_ij = <Phi(t_i), Phi(x_j)> = k(t_i, x_j) 
+>>> Kt
+array([[ 0.93706746,  0.7945336 ,  0.48190899],
+       [ 0.68045064,  1.        ,  0.44043165]])
+
+Centering in Feature Space
+--------------------------
+
+The centered kernel matrix :math:`\mathbf{\tilde{K}^t}` is computed
+by:
+	
+    .. math::
+    
+        \mathbf{\tilde{K}^t}_{ij} = \left\langle
+        \Phi(\mathbf{t}_i) - 
+        \frac{1}{N} \sum_{m=1}^N{\Phi(\mathbf{x}_m)},
+	\Phi(\mathbf{x}_j) - 
+        \frac{1}{N} \sum_{n=1}^N{\Phi(\mathbf{x}_n)}
+	\right\rangle.
+
+We can express :math:`\mathbf{\tilde{K}^t}` in terms of :math:`\mathbf{K^t}`
+and :math:`\mathbf{K}`:
+
+    .. math::
+    
+        \mathbf{\tilde{K}^t}_{ij} = \mathbf{K^t} - \mathbf{1}^T_N \mathbf{K}
+	- \mathbf{K^t} \mathbf{1}_N + \mathbf{1}^T_N \mathbf{K} \mathbf{1}_N
+
+where :math:`\mathbf{1}_N` is the :math:`N \times M` matrix with all 
+entries equal to :math:`1/N` and :math:`\mathbf{K}` is :math:`\mathbf{K}_{ij} = 
+\kappa(\mathbf{x}_i, \mathbf{x}_j)`.
+
+
+.. function:: kernel_center(Kt, K)
+   
+   Centers the testing kernel matrix Kt respect the training kernel 
+   matrix K. If Kt = K (kernel_center(K, K), where K = k(x_i, x_j)),
+   the function centers the kernel matrix K.
+
+   :Parameters:
+      Kt : 2d array_like object (M, N)
+         test kernel matrix Kt_ij = k(t_i, x_j).
+	 If Kt = K the function centers the kernel matrix K
+      K : 2d array_like object (N, N)
+         training kernel matrix K_ij = k(x_i, x_j)
+
+   :Returns:
+      Ktcentered :  2d numpy array (M, N)
+         centered version of Kt
+
+Example:
+
+>>> Kcentered = mlpy.kernel_center(K, K) # center K
+>>> Kcentered
+array([[ 0.19119746, -0.07197215, -0.11922531],
+       [-0.07197215,  0.30395696, -0.23198481],
+       [-0.11922531, -0.23198481,  0.35121011]])
+>>> Ktcentered = mlpy.kernel_center(Kt, K) # center the test kernel matrix Kt respect to K
+>>> Ktcentered
+array([[ 0.15376875,  0.06761464, -0.22138339],
+       [-0.07197215,  0.30395696, -0.23198481]])
+
+	 
+Make a Custom Kernel
+--------------------
+TODO
+
+
+.. [Scolkopf98] Bernhard Scholkopf, Alexander Smola, and Klaus-Robert Muller.
+    Nonlinear component analysis as a kernel eigenvalue problem. Neural
+    Computation, 10(5):1299–1319, July 1998.

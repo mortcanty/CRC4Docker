@@ -1,0 +1,71 @@
+Version 3.5.0
+-------------
+New features:
+ * LibSvm(): pred_probability() now returns probability estimates; pred_values() added
+ * LibLinear(): pred_values() and pred_probability() added
+ * dtw_std: squared Euclidean option added
+ * LCS for series composed by real values (lcs_real()) added
+ * Documentation
+
+Fix:
+ * wavelet submodule: cwt(): it returned only real values in morlet and poul
+ * IRelief(): remove np. in learn()
+ * fix rfe_kfda and rfe_w2 when p=1
+
+Version 3.4.0
+-------------
+New features:
+ * Standard DTW added
+ * Subsequence DTW added
+ * Standard LCS added
+
+Fix:
+ * LibSvm: fix error when x is a list in learn() method
+ * fix code for vc++ 
+ * fix setup.py (cblas)
+
+Version 3.3.0
+-------------
+New features:
+ * Maximum Likelihood Classifier (MaximumLikelihoodC) added
+ * Classification Tree added;
+ * KNN: remove labels restrictions
+
+Fix:
+ * fix elasticnet classifier doc
+ * fix PCA (method paramenter): PCA method was always svd 
+ * setup.py: fix classifiers
+
+Version 3.2.1
+-------------
+Fix:
+ * fix stats import in __init__
+ * PLS: speed improved
+ * remove function declaration isn't a prototype warnings from libml
+ * clean findpeaks 
+ * mlpy works with python 3.X
+ * add KNN to __all__ 
+
+Version 3.2
+-----------
+New features:
+ * PLS added 
+Fix:
+ * fix docs in LibSVM and KernelAdatron
+ * fix svg logo 
+ * minor fix in LibSVM and KernelAdatron
+ * include stddef.h in fastcluster 
+
+Version 3.1
+-----------
+New features:
+ * Golub classifier added
+ * RFE (w^2) added
+ * RFE-KFDA added 
+ * Kernel Fisher Classifier added 
+ * kernel class system added
+Fix:
+ * Perceptron: fix pred() output when t is 1d 
+  
+ 
+ 

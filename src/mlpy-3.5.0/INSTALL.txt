@@ -1,0 +1,5 @@
+INSTALL
+=======
+
+See docs/source/install.txt or http://mlpy.sourceforge.net/docs/
+

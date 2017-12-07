@@ -1,0 +1,21 @@
+.. currentmodule:: mlpy
+
+Cross Validation
+================
+
+Leave-one-out and k-fold
+------------------------
+
+.. autofunction:: cv_kfold
+
+
+Random Subsampling (*aka MonteCarlo*)
+-------------------------------------
+
+.. autofunction:: cv_random
+
+
+All Combinations
+----------------
+
+.. autofunction:: cv_all

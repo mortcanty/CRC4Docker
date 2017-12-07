@@ -1,0 +1,4 @@
+mlpy: Copyright (c) 2007-2011, mlpy Developers
+liblinear: Copyright (c) 2007-2010 The LIBLINEAR Project
+libsvm: Copyright (c) 2000-2010 Chih-Chung Chang and Chih-Jen Lin
+fastcluster: Copyright (c) 2011 Daniel Müllner

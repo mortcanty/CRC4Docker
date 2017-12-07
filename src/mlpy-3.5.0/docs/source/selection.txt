@@ -1,0 +1,11 @@
+.. currentmodule:: mlpy
+
+Feature Selection
+=================
+
+Recursive Feature Elimination
+-----------------------------
+
+.. autofunction:: rfe_w2
+
+.. autofunction:: rfe_kfda

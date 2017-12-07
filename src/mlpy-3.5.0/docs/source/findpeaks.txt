@@ -1,0 +1,7 @@
+.. currentmodule:: mlpy
+
+Find Peaks
+==========
+
+.. autofunction:: mlpy.findpeaks_dist
+.. autofunction:: mlpy.findpeaks_win

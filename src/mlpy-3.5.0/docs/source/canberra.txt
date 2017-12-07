@@ -1,0 +1,33 @@
+.. currentmodule:: mlpy
+
+Canberra Distances and Stability Indicator of Ranked Lists
+==========================================================
+
+Canberra distance
+-----------------
+
+.. autofunction:: canberra(x, y)
+
+
+Canberra Distance with Location Parameter
+-----------------------------------------
+See [Jurman08]_.
+
+.. autofunction:: canberra_location(x, y, k=None)
+
+The function computes:
+   .. math::
+   
+      \sum_i{\frac{|\min\{x_i+1, k+1\} - \min\{y_i+1, k+1\}|}
+         {\min\{x_i+1, k+1\} + \min\{y_i+1, k+1\}}}
+
+
+.. autofunction:: canberra_location_expected(p, k=None)
+
+Canberra Stability Indicator
+----------------------------
+See [Jurman08]_.
+
+.. autofunction:: canberra_stability(x, k=None)
+
+.. [Jurman08] G Jurman, S Riccadonna, R Visintainer and C Furlanello. Algebraic stability indicators for ranked lists in molecular profiling. Bioinformatics Vol. 24 no. 2 2008, pages 258–264.

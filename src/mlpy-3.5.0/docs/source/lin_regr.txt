@@ -1,0 +1,139 @@
+.. currentmodule:: mlpy
+
+Linear Methods for Regression
+=============================
+
+Ordinary Least Squares
+----------------------
+
+.. autofunction:: ols_base
+
+.. autoclass:: OLS
+   :members:
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean, cov, n = [1, 5], [[1,1],[1,2]], 200
+>>> d = np.random.multivariate_normal(mean, cov, n)
+>>> x, y = d[:, 0].reshape(-1, 1), d[:, 1]
+>>> x.shape
+(200, 1)
+>>> ols = mlpy.OLS()
+>>> ols.learn(x, y)
+>>> xx = np.arange(np.min(x), np.max(x), 0.01).reshape(-1, 1)
+>>> yy = ols.pred(xx)
+>>> fig = plt.figure(1) # plot
+>>> plot = plt.plot(x, y, 'o', xx, yy, '--k')
+>>> plt.show()
+
+.. image:: images/ols.png
+
+Ridge Regression
+----------------
+See [Hoerl70]_. Ridge regression is also known as regularized least
+squares. It avoids overfitting by controlling the size of the model vector
+:math:`\beta`, measured by its :math:`\ell^2`-norm.
+
+.. autofunction:: ridge_base
+
+.. autoclass:: Ridge
+   :members:
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean, cov, n = [1, 5], [[1,1],[1,2]], 200
+>>> d = np.random.multivariate_normal(mean, cov, n)
+>>> x, y = d[:, 0].reshape(-1, 1), d[:, 1]
+>>> x.shape
+(200, 1)
+>>> ridge = mlpy.Ridge()
+>>> ridge.learn(x, y)
+>>> xx = np.arange(np.min(x), np.max(x), 0.01).reshape(-1, 1)
+>>> yy = ridge.pred(xx)
+>>> fig = plt.figure(1) # plot
+>>> plot = plt.plot(x, y, 'o', xx, yy, '--k')
+>>> plt.show()
+
+.. image:: images/ridge.png
+
+
+Partial Least Squares
+---------------------
+
+.. autoclass:: PLS
+   :members:
+
+Last Angle Regression (LARS)
+----------------------------
+
+.. autofunction:: lars_base
+
+.. autoclass:: LARS
+   :members:
+
+This example replicates the Figure 3 in [Efron04]_.
+The diabetes data can be downloaded from http://www.stanford.edu/~hastie/Papers/LARS/diabetes.data
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> diabetes = np.loadtxt("diabetes.data", skiprows=1)
+>>> x = diabetes[:, :-1]
+>>> y = diabetes[:, -1]
+>>> x -= np.mean(x, axis=0) # center x
+>>> x /= np.sqrt(np.sum((x)**2, axis=0)) # normalize x
+>>> y -= np.mean(y) # center y
+>>> lars = mlpy.LARS()
+>>> lars.learn(x, y)
+>>> lars.steps() # number of steps performed
+10
+>>> lars.beta()
+array([ -10.0098663 , -239.81564367,  519.84592005,  324.3846455 ,
+       -792.17563855,  476.73902101,  101.04326794,  177.06323767,
+        751.27369956,   67.62669218])
+>>> lars.beta0()
+4.7406304540474682e-14
+>>> est = lars.est() # returns all LARS estimates
+>>> beta_sum = np.sum(np.abs(est), axis=1)
+>>> fig = plt.figure(1)
+>>> plot1 = plt.plot(beta_sum, est)
+>>> xl = plt.xlabel(r'$\sum{|\beta_j|}$')
+>>> yl = plt.ylabel(r'$\beta_j$')
+>>> plt.show()
+
+.. image:: images/lars_diabetes.png
+
+Elastic Net
+-----------
+Documentation and implementation is taken from
+http://web.mit.edu/lrosasco/www/contents/code/ENcode.html
+
+Computes the coefficient vector which solves the elastic-net 
+regularization problem
+
+.. math:: \min \{{\| X \beta - Y\|}^2  + \lambda ({\|\beta\|}^2_2 + \epsilon {\|\beta\|}_1\}
+
+Elastic Net Regularization is an algorithm for learning and variable selection.
+It is based on a regularized least square procedure with a penalty which is
+the sum of an L1 penalty (like Lasso) and an L2 penalty (like ridge
+regression). The first term enforces the sparsity of the solution, whereas
+the second term ensures democracy among groups of correlated variables.
+The second term has also a smoothing effect that stabilizes the obtained
+solution. 
+
+.. autofunction:: elasticnet_base
+
+.. autoclass:: ElasticNet
+   :members:
+
+.. [DeMol08] C De Mol, E De Vito and L Rosasco. Elastic Net Regularization in Learning Theory,CBCL paper #273/ CSAILTechnical Report #TR-2008-046, Massachusetts Institute of Technology, Cambridge, MA, July 24, 2008. arXiv:0807.3423 (to appear in the Journal of Complexity).
+.. [Efron04] Bradley Efron, Trevor Hastie, Iain Johnstone and Robert Tibshirani. Least Angle Regression. Annals of Statistics, 2004, volume 32, pages 407-499.
+.. [Hoerl70] A E Hoerl and R W Kennard. Ridge Regression: Biased Estimation for Nonorthogonal Problems. Technometrics. Vol. 12, No. 1, 1970, pp. 55–67.

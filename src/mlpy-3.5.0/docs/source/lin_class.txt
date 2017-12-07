@@ -1,0 +1,254 @@
+.. currentmodule:: mlpy
+
+Linear Methods for Classification
+=================================
+
+Linear Discriminant Analysis Classifier (LDAC)
+----------------------------------------------
+See [Hastie09]_, page 106.
+
+.. autoclass:: LDAC
+   :members:
+
+
+Examples
+^^^^^^^^
+
+Binary classification:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class -1
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = -np.ones(n2, dtype=np.int)
+>>> x = np.concatenate((x1, x2), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2))
+>>> ldac = mlpy.LDAC()
+>>> ldac.learn(x, y)
+>>> w = ldac.w()
+>>> w
+array([ 2.5948979  -2.58553746])
+>>> b = ldac.bias()
+>>> b
+5.63727441841
+>>> xx = np.arange(np.min(x[:,0]), np.max(x[:,0]), 0.01)
+>>> yy = - (w[0] * xx + b) / w[1] # separator line
+>>> fig = plt.figure(1) # plot
+>>> plot1 = plt.plot(x1[:, 0], x1[:, 1], 'ob', x2[:, 0], x2[:, 1], 'or')
+>>> plot2 = plt.plot(xx, yy, '--k')
+>>> plt.show()
+
+.. image:: images/lda_binary.png
+
+>>> test = [[0, 2], [4, 2]] # test points
+>>> ldac.pred(test)
+array([-1, -1])
+>>> ldac.labels()
+array([-1,  1])
+
+Multiclass classification:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 25], [[1,1],[1,2]], 200  # 200 samples of class 0
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.zeros(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 22.5], [[1,0],[0,1]], 300 # 300 samples of class 1
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = np.ones(n2, dtype=np.int)
+>>> mean3, cov3, n3 = [5, 28], [[0.5,0],[0,0.5]], 200 # 200 samples of class 2
+>>> x3 = np.random.multivariate_normal(mean3, cov3, n3)
+>>> y3 = 2 * np.ones(n3, dtype=np.int)
+>>> x = np.concatenate((x1, x2, x3), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2, y3))
+>>> ldac = mlpy.LDAC()
+>>> ldac.learn(x, y)
+>>> w = ldac.w()
+>>> w # w[i]: coefficients label ldac.labels()[i]
+array([[-0.30949939  4.53041257]
+       [ 2.52002288  1.50501818]
+       [ 4.2499381   5.90569921]])
+>>> b = ldac.bias()
+>>> b # b[i]: bias for label ldac.labels()[i]
+array([-12.65129158  -5.7628039  -35.63605709])
+>>> xx = np.arange(np.min(x[:,0]), np.max(x[:,0]), 0.01)
+>>> yy1 = (xx* (w[1][0]-w[0][0]) + b[1] - b[0]) / (w[0][1]-w[1][1])
+>>> yy2 = (xx* (w[2][0]-w[0][0]) + b[2] - b[0]) / (w[0][1]-w[2][1])
+>>> yy3 = (xx* (w[2][0]-w[1][0]) + b[2] - b[1]) / (w[1][1]-w[2][1])
+>>> fig = plt.figure(1) # plot
+>>> plot1 = plt.plot(x1[:, 0], x1[:, 1], 'ob', x2[:, 0], x2[:, 1], 'or', x3[:, 0], x3[:, 1], 'og')
+>>> plot2 = plt.plot(xx, yy1, '--k')
+>>> plot3 = plt.plot(xx, yy2, '--k')
+>>> plot4 = plt.plot(xx, yy3, '--k')
+>>> plt.show()
+
+.. image:: images/lda_multi.png
+
+>>> test = [[6,7], [4, 2]] # test points
+>>> ldac.pred(test)
+array([2, 1])
+>>> ldac.labels()
+array([0, 1, 2])
+
+
+Basic Perceptron
+----------------
+
+.. autoclass:: Perceptron
+   :members:
+
+
+Examples
+^^^^^^^^
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class -1
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = -np.ones(n2, dtype=np.int)
+>>> x = np.concatenate((x1, x2), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2))
+>>> p = mlpy.Perceptron(alpha=0.1, thr=0.05, maxiters=100) # basic perceptron
+>>> p.learn(x, y)
+>>> w = p.w()
+>>> w
+array([-69.00185254,  46.49202132])
+>>> b = p.bias()
+>>> b
+-59.600000000000001
+>>> p.err()
+0.050000000000000003
+>>> p.iters()
+46
+>>> xx = np.arange(np.min(x[:,0]), np.max(x[:,0]), 0.01)  
+>>> yy = - (w[0] * xx + b) / w[1] # separator line
+>>> fig = plt.figure(1) # plot
+>>> plot1 = plt.plot(x1[:, 0], x1[:, 1], 'ob', x2[:, 0], x2[:, 1], 'or')
+>>> plot2 = plt.plot(xx, yy, '--k')
+>>> plt.show()
+
+.. image:: images/perceptron.png
+
+>>> test = [[0, 2], [4, 2]] # test points
+>>> p.pred(test)
+array([ 1, -1])
+>>> p.labels()
+array([-1,  1])
+
+
+Elastic Net Classifier
+----------------------
+See [Hastie09]_, Chapter 18, page 661.
+
+.. autoclass:: ElasticNetC
+   :members:
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class -1
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = -np.ones(n2, dtype=np.int)
+>>> x = np.concatenate((x1, x2), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2))
+>>> en = mlpy.ElasticNetC(lmb=0.01, eps=0.001)
+>>> en.learn(x, y)
+>>> w = en.w()
+>>> w
+array([-0.27733363,  0.30115026])
+>>> b = en.bias()
+>>> b
+-0.73445916200332606
+>>> en.iters()
+1000
+>>> xx = np.arange(np.min(x[:,0]), np.max(x[:,0]), 0.01)
+>>> yy = - (w[0] * xx + b) / w[1] # separator line
+>>> fig = plt.figure(1) # plot
+>>> plot1 = plt.plot(x1[:, 0], x1[:, 1], 'ob', x2[:, 0], x2[:, 1], 'or')
+>>> plot2 = plt.plot(xx, yy, '--k')
+>>> plt.show()
+
+.. image:: images/elasticnetc.png
+
+>>> test = [[1, 4], [2, 2]] # test points
+>>> en.pred(test)
+array([ 1., -1.])
+
+
+Logistic Regression
+-------------------
+
+See :doc:`liblinear`
+
+Support Vector Classification
+-----------------------------
+
+See :doc:`liblinear`
+
+Diagonal Linear Discriminant Analysis (DLDA)
+--------------------------------------------
+See [Hastie09]_, page 651.
+
+
+.. autoclass:: DLDA
+   :members:
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 0
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.zeros(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class 1
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = np.ones(n2, dtype=np.int)
+>>> mean3, cov3, n3 = [5, 8], [[0.5,0],[0,0.5]], 200 # 200 samples of class 2
+>>> x3 = np.random.multivariate_normal(mean3, cov3, n3)
+>>> y3 = 2 * np.ones(n3, dtype=np.int)
+>>> x = np.concatenate((x1, x2, x3), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2, y3))
+>>> da = mlpy.DLDA(delta=0.1)
+>>> da.learn(x, y)
+>>> xmin, xmax = x[:,0].min()-1, x[:,0].max()+1
+>>> ymin, ymax = x[:,1].min()-1, x[:,1].max()+1
+>>> xx, yy = np.meshgrid(np.arange(xmin, xmax, 0.1), np.arange(ymin, ymax, 0.1))
+>>> xnew = np.c_[xx.ravel(), yy.ravel()]
+>>> ynew = da.pred(xnew).reshape(xx.shape)
+>>> fig = plt.figure(1)
+>>> cmap = plt.set_cmap(plt.cm.Paired)
+>>> plot1 = plt.pcolormesh(xx, yy, ynew)
+>>> plot2 = plt.scatter(x[:,0], x[:,1], c=y)
+>>> plt.show()
+
+.. image:: images/dlda.png
+
+
+Golub Classifier
+----------------
+
+.. autoclass:: Golub
+   :members:
+
+
+.. [Hastie09] T Hastie, R Tibshirani, J Friedman. The Elements of Statistical Learning. Second Edition.

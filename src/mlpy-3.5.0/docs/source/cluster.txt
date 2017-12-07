@@ -1,0 +1,73 @@
+.. currentmodule:: mlpy
+
+Cluster Analysis
+================
+
+Hierarchical Clustering
+-----------------------
+
+Hierarchical Clustering algorithm derived from the R package 'amap' [Amap]_.
+
+The condensed distance matrix `y` can be computed by :func:`pdist()` function in **scipy** (<http://docs.scipy.org/doc/scipy/reference/spatial.distance.html>)
+
+.. autoclass:: HCluster
+   :members:
+
+.. [Amap] amap: Another Multidimensional Analysis Package, http://cran.r-project.org/web/packages/amap/index.html
+
+Memory-saving Hierarchical Clustering
+-------------------------------------
+
+Memory-saving Hierarchical Clustering derived from the R and Python 
+package 'fastcluster' [fastcluster]_.
+
+.. autoclass:: MFastHCluster
+   :members:
+
+.. [fastcluster] Fast hierarchical clustering routines for R and Python, http://cran.r-project.org/web/packages/fastcluster/index.html
+
+
+k-means
+-------
+
+.. function:: kmeans(x, k, plus=False, seed=0)
+    
+    k-means clustering.
+
+    :Parameters:
+       x : 2d array_like object (N, P)
+          data
+       k : int (1<k<N)
+          number of clusters
+       plus : bool
+          k-means++ algorithm for initialization
+       seed : int
+          random seed for initialization
+
+    :Returns:
+       clusters, means, steps: 1d array, 2d array, int
+          cluster membership in 0,...,K-1, means (K,P), number of steps
+          	  
+Example:
+
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200 # 200 points, mean=(1,5)
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 points, mean=(2.5,2.5)
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> mean3, cov3, n3 = [5, 8], [[0.5,0],[0,0.5]], 200 # 200 points, mean=(5,8)
+>>> x3 = np.random.multivariate_normal(mean3, cov3, n3)
+>>> x = np.concatenate((x1, x2, x3), axis=0) # concatenate the samples
+>>> cls, means, steps = mlpy.kmeans(x, k=3, plus=True)
+>>> steps
+13
+>>> fig = plt.figure(1)
+>>> plot1 = plt.scatter(x[:,0], x[:,1], c=cls, alpha=0.75)
+>>> plot2 = plt.scatter(means[:,0], means[:,1], c=np.unique(cls), s=128, marker='d') # plot the means
+>>> plt.show()
+
+.. image:: images/kmeans.png

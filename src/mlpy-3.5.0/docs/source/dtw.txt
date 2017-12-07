@@ -1,0 +1,38 @@
+.. currentmodule:: mlpy
+
+Dynamic Time Warping (DTW)
+==========================
+
+Standard DTW
+------------
+
+.. autofunction:: dtw_std(x, y, dist_only=True)
+
+Example
+
+Reproducing the Fig. 2 example in [Salvador04]_.
+
+>>> import mlpy
+>>> import matplotlib.pyplot as plt
+>>> import matplotlib.cm as cm
+>>> x = [0,0,0,0,1,1,2,2,3,2,1,1,0,0,0,0]
+>>> y = [0,0,1,1,2,2,3,3,3,3,2,2,1,1,0,0]
+>>> dist, cost, path = mlpy.dtw_std(x, y, dist_only=False)
+>>> dist
+0.0
+>>> fig = plt.figure(1)
+>>> ax = fig.add_subplot(111)
+>>> plot1 = plt.imshow(cost.T, origin='lower', cmap=cm.gray, interpolation='nearest')
+>>> plot2 = plt.plot(path[0], path[1], 'w')
+>>> xlim = ax.set_xlim((-0.5, cost.shape[0]-0.5))
+>>> ylim = ax.set_ylim((-0.5, cost.shape[1]-0.5))
+>>> plt.show()
+
+.. image:: images/dtw.png
+
+.. [Salvador04] S Salvador and P Chan. FastDTW: Toward Accurate Dynamic Time Warping in Linear Time and Space. 3rd Wkshp. on Mining Temporal and Sequential Data, ACM KDD '04, 2004.
+
+Subsequence DTW
+---------------
+
+.. autofunction:: dtw_subsequence(x, y)

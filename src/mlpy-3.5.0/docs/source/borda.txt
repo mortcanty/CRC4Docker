@@ -1,0 +1,6 @@
+.. currentmodule:: mlpy
+
+Borda Count
+===========
+
+.. autofunction:: borda_count

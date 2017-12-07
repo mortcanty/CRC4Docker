@@ -1,0 +1,88 @@
+.. module:: mlpy.wavelet
+
+:py:mod:`mlpy.wavelet` - Wavelet Transform
+==========================================
+
+Padding
+-------
+
+.. autofunction:: pad
+
+
+Discrete Wavelet Transform
+--------------------------
+
+Discrete Wavelet Transform based on the GSL DWT [Gsldwt]_.
+
+For the forward transform, the output is the discrete wavelet transform
+:math:`f_i \rightarrow w_{j,k}` in a packed triangular storage layout, where :math:`j`
+is the index of the level :math:`j = 0 \dots J-1` and :math:`k` is the index
+of the coefficient within each level, :math:`k = 0 \dots (2^j)-1`.
+The total number of levels is :math:`J = \log_2(n)`. The output data 
+has the following form,
+
+.. math::
+
+   (s_{-1,0}, d_{0,0}, d_{1,0}, d_{1,1}, d_{2,0}, \dots, d_{j,k}, ..., d_{J-1,2^{J-1}-1})
+
+where the first element is the smoothing coefficient :math:`s_{-1,0}`,
+followed by the detail coefficients :math:`d_{j,k}` for each level :math:`j`. 
+The backward transform inverts these coefficients to obtain the original data. 
+
+.. note::
+
+   from GSL online manual (http://www.gnu.org/software/gsl/manual/)
+
+.. autofunction:: dwt(x, wf, k, centered=False)
+.. autofunction:: idwt(X, wf, k, centered=False)
+
+
+Undecimated Wavelet Transform
+-----------------------------
+
+Undecimated Wavelet Transform (also known as stationary wavelet transform,
+redundant wavelet transform, translation invariant wavelet transform,
+shift invariant wavelet transform or Maximal overlap wavelet transform)
+based on the "wavelets" R package.
+
+.. autofunction:: uwt(x, wf, k, levels=0)
+.. autofunction:: iuwt(X, wf, k)
+
+.. autofunction:: uwt_align_h2
+.. autofunction:: uwt_align_d4
+
+Continuous Wavelet Transform
+----------------------------
+
+Continuous Wavelet Transform based on [Torrence98]_.
+
+.. autofunction:: cwt
+.. autofunction:: icwt
+
+.. autofunction:: autoscales
+.. autofunction:: fourier_from_scales
+.. autofunction:: scales_from_fourier
+
+
+.. [Torrence98] C Torrence and G P Compo. Practical Guide to Wavelet Analysis
+.. [Gsldwt] Gnu Scientific Library, http://www.gnu.org/software/gsl/
+
+Example (requires matplotlib)
+
+.. code-block:: python
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   >>> import mlpy.wavelet as wave
+   >>> x = np.random.sample(512)
+   >>> scales = wave.autoscales(N=x.shape[0], dt=1, dj=0.25, wf='dog', p=2)
+   >>> X = wave.cwt(x=x, dt=1, scales=scales, wf='dog', p=2)
+   >>> fig = plt.figure(1)
+   >>> ax1 = plt.subplot(2,1,1)
+   >>> p1 = ax1.plot(x)
+   >>> ax1.autoscale_view(tight=True)
+   >>> ax2 = plt.subplot(2,1,2)
+   >>> p2 = ax2.imshow(np.abs(X), interpolation='nearest')
+   >>> plt.show()
+
+.. image:: images/cwt.png

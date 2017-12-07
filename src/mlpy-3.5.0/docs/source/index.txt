@@ -1,0 +1,58 @@
+.. mlpy documentation master file, created by
+   sphinx-quickstart on Thu Jul 14 17:00:14 2011.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+.. py:module:: mlpy
+
+Welcome to mlpy's documentation!
+================================
+
+:Release: |version|
+:Date: |today|
+:Homepage: http://mlpy.sourceforge.net
+
+Machine Learning PYthon (mlpy) is a high-performance Python
+library for predictive modeling.
+
+This reference manual details functions, modules, and objects
+included in mlpy.
+
+
+
+.. toctree::
+   :maxdepth: 2
+
+   install
+   intro
+   tutorial
+   lin_regr
+   lin_class
+   kernel
+   nonlin_regr
+   nonlin_class
+   svm
+   liblinear
+   cluster
+   weighting
+   selection
+   dim_red
+   crossval
+   metrics
+   stats
+   canberra
+   borda
+   findpeaks
+   dtw
+   lcs
+   wavelet
+   scaling
+
+
+Indices and tables
+------------------
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+

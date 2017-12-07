@@ -1,0 +1,202 @@
+.. currentmodule:: mlpy
+
+Non Linear Methods for Classification
+=====================================
+
+Parzen-based classifier
+-----------------------
+
+.. autoclass:: Parzen
+   :members:
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 4.5], [[1,1],[1,2]], 20  # 20 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,1],[1,2]], 30 # 30 samples of class 2
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = 2 * np.ones(n2, dtype=np.int)
+>>> x = np.concatenate((x1, x2), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2))
+>>> K = mlpy.kernel_gaussian(x, x, sigma=2) # kernel matrix
+>>> parzen = mlpy.Parzen()
+>>> parzen.learn(K, y)
+>>> xmin, xmax = x[:,0].min()-1, x[:,0].max()+1
+>>> ymin, ymax = x[:,1].min()-1, x[:,1].max()+1
+>>> xx, yy = np.meshgrid(np.arange(xmin, xmax, 0.02), np.arange(ymin, ymax, 0.02))
+>>> xt = np.c_[xx.ravel(), yy.ravel()] # test points
+>>> Kt = mlpy.kernel_gaussian(xt, x, sigma=2) # test kernel matrix
+>>> yt = parzen.pred(Kt).reshape(xx.shape)
+>>> fig = plt.figure(1)
+>>> cmap = plt.set_cmap(plt.cm.Paired)
+>>> plot1 = plt.pcolormesh(xx, yy, yt)
+>>> plot2 = plt.scatter(x[:,0], x[:,1], c=y)
+>>> plt.show()
+
+.. image:: images/parzen.png
+
+
+Support Vector Classification
+-----------------------------
+
+See :doc:`svm`
+
+Kernel Fisher Discriminant Classifier
+-------------------------------------
+
+.. autoclass:: KFDAC
+   :members:
+
+
+k-Nearest-Neighbor
+------------------
+
+.. class:: mlpy.KNN(k)
+   	   
+	k-Nearest Neighbor (euclidean distance)
+        
+	:Parameters:
+           k : int
+              number of nearest neighbors
+       	
+	.. automethod:: learn(x, y)
+        .. automethod:: pred(t)
+	.. automethod:: nclasses()
+	.. automethod:: labels()
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class 2
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = 2 * np.ones(n2, dtype=np.int)
+>>> mean3, cov3, n3 = [5, 8], [[0.5,0],[0,0.5]], 200 # 200 samples of class 3
+>>> x3 = np.random.multivariate_normal(mean3, cov3, n3)
+>>> y3 = 3 * np.ones(n3, dtype=np.int)
+>>> x = np.concatenate((x1, x2, x3), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2, y3))
+>>> knn = mlpy.KNN(k=3)
+>>> knn.learn(x, y)
+>>> xmin, xmax = x[:,0].min()-1, x[:,0].max()+1
+>>> ymin, ymax = x[:,1].min()-1, x[:,1].max()+1
+>>> xx, yy = np.meshgrid(np.arange(xmin, xmax, 0.1), np.arange(ymin, ymax, 0.1))
+>>> xnew = np.c_[xx.ravel(), yy.ravel()]
+>>> ynew = knn.pred(xnew).reshape(xx.shape)
+>>> ynew[ynew == 0] = 1 # set the samples with no unique classification to 1
+>>> fig = plt.figure(1)
+>>> cmap = plt.set_cmap(plt.cm.Paired)
+>>> plot1 = plt.pcolormesh(xx, yy, ynew)
+>>> plot2 = plt.scatter(x[:,0], x[:,1], c=y)
+>>> plt.show()
+
+.. image:: images/knn.png
+
+Classification Tree
+-------------------
+
+.. class:: mlpy.ClassTree(stumps=0, minsize=1)
+   	   
+	Classification Tree (gini index)
+        
+	:Parameters:
+           stumps : bool
+              True: compute single split or False: standard tree
+           minsize : int (>=0)
+              minimum number of cases required to split a leaf
+	       	
+	.. automethod:: learn(x, y)
+        .. automethod:: pred(t)
+	.. automethod:: nclasses()
+	.. automethod:: labels()
+
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class 2
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = 2 * np.ones(n2, dtype=np.int)
+>>> mean3, cov3, n3 = [6, 8], [[0.5,0],[0,0.5]], 200 # 200 samples of class 3
+>>> x3 = np.random.multivariate_normal(mean3, cov3, n3)
+>>> y3 = 3 * np.ones(n3, dtype=np.int)
+>>> x = np.concatenate((x1, x2, x3), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2, y3))
+>>> tree = mlpy.ClassTree(minsize=10)
+>>> tree.learn(x, y)
+>>> xmin, xmax = x[:,0].min()-1, x[:,0].max()+1
+>>> ymin, ymax = x[:,1].min()-1, x[:,1].max()+1
+>>> xx, yy = np.meshgrid(np.arange(xmin, xmax, 0.1), np.arange(ymin, ymax, 0.1))
+>>> xnew = np.c_[xx.ravel(), yy.ravel()]
+>>> ynew = tree.pred(xnew).reshape(xx.shape)
+>>> ynew[ynew == 0] = 1 # set the samples with no unique classification to 1
+>>> fig = plt.figure(1)
+>>> cmap = plt.set_cmap(plt.cm.Paired)
+>>> plot1 = plt.pcolormesh(xx, yy, ynew)
+>>> plot2 = plt.scatter(x[:,0], x[:,1], c=y)
+>>> plt.show()
+
+
+.. image:: images/classtree.png
+
+
+Maximum Likelihood Classifier
+-----------------------------
+
+.. class:: mlpy.MaximumLikelihoodC()
+   	   
+	Maximum Likelihood Classifier
+	       	
+	.. automethod:: learn(x, y)
+        .. automethod:: pred(t)
+	.. automethod:: nclasses()
+	.. automethod:: labels()
+
+Example:
+
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mlpy
+>>> np.random.seed(0)
+>>> mean1, cov1, n1 = [1, 5], [[1,1],[1,2]], 200  # 200 samples of class 1
+>>> x1 = np.random.multivariate_normal(mean1, cov1, n1)
+>>> y1 = np.ones(n1, dtype=np.int)
+>>> mean2, cov2, n2 = [2.5, 2.5], [[1,0],[0,1]], 300 # 300 samples of class 2
+>>> x2 = np.random.multivariate_normal(mean2, cov2, n2)
+>>> y2 = 2 * np.ones(n2, dtype=np.int)
+>>> mean3, cov3, n3 = [6, 8], [[0.5,0],[0,0.5]], 200 # 200 samples of class 3
+>>> x3 = np.random.multivariate_normal(mean3, cov3, n3)
+>>> y3 = 3 * np.ones(n3, dtype=np.int)
+>>> x = np.concatenate((x1, x2, x3), axis=0) # concatenate the samples
+>>> y = np.concatenate((y1, y2, y3))
+>>> ml = mlpy.MaximumLikelihoodC()
+>>> ml.learn(x, y)
+>>> xmin, xmax = x[:,0].min()-1, x[:,0].max()+1
+>>> ymin, ymax = x[:,1].min()-1, x[:,1].max()+1
+>>> xx, yy = np.meshgrid(np.arange(xmin, xmax, 0.1), np.arange(ymin, ymax, 0.1))
+>>> xnew = np.c_[xx.ravel(), yy.ravel()]
+>>> ynew = ml.pred(xnew).reshape(xx.shape)
+>>> ynew[ynew == 0] = 1 # set the samples with no unique classification to 1
+>>> fig = plt.figure(1)
+>>> cmap = plt.set_cmap(plt.cm.Paired)
+>>> plot1 = plt.pcolormesh(xx, yy, ynew)
+>>> plot2 = plt.scatter(x[:,0], x[:,1], c=y)
+>>> plt.show()
+
+.. image:: images/mlc.png

@@ -1,0 +1,8 @@
+.. currentmodule:: mlpy
+
+A Set of Statistical Functions
+==============================
+
+.. autofunction:: bootstrap_ci
+
+.. autofunction:: quantile
