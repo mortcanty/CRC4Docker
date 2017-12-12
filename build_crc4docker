@@ -1,0 +1,5 @@
+#!/bin/bash
+cd /home/mort/python/CRC4Docker/src
+docker stop crc4
+docker rm crc4
+docker build -t mort/crc4docker .

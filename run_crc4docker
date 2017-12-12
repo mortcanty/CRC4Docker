@@ -1,0 +1,4 @@
+#!/bin/bash
+docker stop crc4
+docker rm crc4
+docker run -d -p 443:8888  -v $1:/home/myimagery --name=crc4  mort/crc4docker

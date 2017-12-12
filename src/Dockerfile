@@ -1,22 +1,24 @@
-# x86 architecture 
+# Dockerfile for software for Image Analysis, Classification
+# and Change Detection in Remote Sensing, Fourth Edition
+ 
 FROM     debian:jessie  
            
-
 MAINTAINER Mort Canty "mort.canty@gmail.com"
-ENV     REFRESHED_AT 2015-12-26
+ENV     REFRESHED_AT 2017-12-13a
+
 RUN apt-get update && apt-get install -y \
     python \
     build-essential \
     make \
     gcc \
     pandoc \
-    dos2unix \
     python-dev \
     python-pygments \
     python-pip 
 
 # ipython notebook
-RUN     pip install "ipython[notebook]"
+RUN     pip install --upgrade pip
+RUN     pip install jupyter
 
 # enable parallel computing
 RUN     pip install ipyparallel
@@ -25,35 +27,27 @@ RUN     sed -i "/# Configuration file for jupyter-notebook./a  \
                 c.NotebookApp.server_extensions.append('ipyparallel.nbextension')" \
             /root/.jupyter/jupyter_notebook_config.py
 
-# install python environment for crc scripts
+# install python environment for crc4 scripts
 RUN     apt-get install -y python-numpy python-scipy \
          python-gdal python-matplotlib libgdal-dev gdal-bin python-shapely \
          python-opencv
 
-# install *latest* mlpy (with MaximumLikelihoodC and LibSvm)
+# install mlpy (with MaximumLikelihoodC and LibSvm)
 RUN     apt-get install -y libgsl0-dev
 ADD     mlpy-3.5.0 /mlpy-3.5.0
 WORKDIR /mlpy-3.5.0
 RUN     python setup.py install
-
-# package imported by auxil package (but not used)
-RUN     apt-get install -y python-tk 
 
 # setup the prov_means library
 COPY    prov_means.c /home/prov_means.c
 WORKDIR /home
 RUN     gcc -shared -Wall -g -o libprov_means.so -fPIC prov_means.c
 RUN     cp libprov_means.so /usr/lib/libprov_means.so
-
-# ipython notebook startup script
-ADD     notebook.sh /
-RUN     chmod u+x /notebook.sh
-RUN     dos2unix /notebook.sh
+RUN     rm prov_means.c
 
 EXPOSE 8888
 
 # install auxil
-ENV     SCRIPTS_CHANGED 2015-12-09
 COPY    dist/auxil-1.1.tar.gz /home/auxil-1.1.tar.gz
 RUN     tar -xzvf auxil-1.1.tar.gz
 WORKDIR /home/auxil-1.1
@@ -69,16 +63,18 @@ RUN     pip install --upgrade setuptools && \
         pip install pyCrypto && \
         apt-get install -y libssl-dev
 RUN     pip install earthengine-api
-ADD     Crypto /home/Crypto
-ADD     ee /home/ee
-ADD     httplib2 /home/httplib2
-ADD     oauth2client /home/oauth2client
 
-# textbook scripts and images
-ADD     Scripts /home/Scripts
-ADD     Images  /home/Images
-COPY    normalize /home/normalize
-COPY    c-correction.sh /home/c-correction.sh
+# tensorflow
+RUN     pip install tensorflow
+
+# textbook scripts, notebooks and images
+ADD     scripts /home/scripts
+ADD     imagery /home/imagery
+COPY    Chapter1.ipynb /home/Chapter1.ipynb
+
+# ipython notebook startup script
+ADD     notebook.sh /
+RUN     chmod u+x /notebook.sh
 
 WORKDIR /home  
 CMD     ["/notebook.sh"]
