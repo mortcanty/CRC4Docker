@@ -1,0 +1,8 @@
+/__init__.pyc
+/appengine.pyc
+/client.pyc
+/clientsecrets.pyc
+/crypt.pyc
+/service_account.pyc
+/util.pyc
+/xsrfutil.pyc

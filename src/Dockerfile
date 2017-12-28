@@ -1,5 +1,6 @@
-# Dockerfile for software for Image Analysis, Classification
-# and Change Detection in Remote Sensing, Fourth Edition
+# Dockerfile with software for 
+# Image Analysis, Classification and Change Detection
+# in Remote Sensing, Fourth Revised Edition
  
 FROM     debian:jessie  
            

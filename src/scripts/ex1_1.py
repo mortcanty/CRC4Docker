@@ -24,7 +24,7 @@ def main():
         image[b,:,:]=band.ReadAsArray(0,0,cols,rows)
     inDataset = None
 
-#  display first band    
+#  display NIR band    
     band0 = image[2,:,:]   
     mn = np.amin(band0)
     mx = np.amax(band0)

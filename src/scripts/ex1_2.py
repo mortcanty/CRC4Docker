@@ -37,7 +37,7 @@ def main():
     PCs = np.reshape(np.array(G*U),(rows,cols,bands))   
     
 #  write to disk       
-    outfile = '../imagery/may0107_pca.tif'
+    outfile = '../imagery/pca.tif'
     if outfile:
         driver = gdal.GetDriverByName('Gtiff')   
         outDataset = driver.Create(outfile,
