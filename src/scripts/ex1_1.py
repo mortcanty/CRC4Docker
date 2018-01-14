@@ -9,15 +9,13 @@ def main():
         
     gdal.AllRegister() 
     infile = '../imagery/may0107'
-    if infile:                  
-        inDataset = gdal.Open(infile,GA_ReadOnly)     
-        cols = inDataset.RasterXSize
-        rows = inDataset.RasterYSize 
-        bands = inDataset.RasterCount   
-    else:
-        return  
+                
+    inDataset = gdal.Open(infile,GA_ReadOnly)     
+    cols = inDataset.RasterXSize
+    rows = inDataset.RasterYSize 
+    bands = inDataset.RasterCount   
 
-#  BSQ array
+
     image = np.zeros((bands,rows,cols))                              
     for b in range(bands):
         band = inDataset.GetRasterBand(b+1)

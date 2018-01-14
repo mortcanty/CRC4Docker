@@ -2,7 +2,7 @@
 # Image Analysis, Classification and Change Detection
 # in Remote Sensing, Fourth Revised Edition
  
-FROM     debian:jessie  
+FROM     continuumio/anaconda 
            
 MAINTAINER Mort Canty "mort.canty@gmail.com"
 ENV     REFRESHED_AT 2017-12-13a
@@ -15,23 +15,15 @@ RUN apt-get update && apt-get install -y \
     pandoc \
     python-dev \
     python-pygments \
-    python-pip  
+    python-pip 
+
+RUN     pip install --upgrade pip
 
 # ipython notebook
-RUN     pip install --upgrade pip
-RUN     pip install jupyter
-
-# enable parallel computing
-RUN     pip install ipyparallel
-RUN     jupyter notebook --generate-config
-RUN     sed -i "/# Configuration file for jupyter-notebook./a  \ 
-                c.NotebookApp.server_extensions.append('ipyparallel.nbextension')" \
-            /root/.jupyter/jupyter_notebook_config.py
-
-# install python environment for crc4 scripts
-RUN     apt-get install -y python-numpy python-scipy \
-         python-gdal python-matplotlib libgdal-dev gdal-bin python-shapely \
-         python-opencv
+RUN     conda install jupyter
+RUN     conda install tensorflow
+RUN     conda install gdal
+RUN     conda install scikit-learn
 
 # install mlpy (with MaximumLikelihoodC and LibSvm)
 RUN     apt-get install -y libgsl0-dev
@@ -45,9 +37,6 @@ WORKDIR /home
 RUN     gcc -shared -Wall -g -o libprov_means.so -fPIC prov_means.c
 RUN     cp libprov_means.so /usr/lib/libprov_means.so
 RUN     rm prov_means.c
-
-# scikit-learn
-RUN     pip install -U scikit-learn
 
 EXPOSE 8888
 

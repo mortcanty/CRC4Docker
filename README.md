@@ -4,7 +4,7 @@ Source files for the Docker image mort/crc4docker
 
 Python scripts for the textbook "Image Analysis, Classification and Change Detection in Remote Sensing, Fourth Revised Edition"
 
-On Ubuntu, for example, pull and run the container with
+On Ubuntu, for example, pull and/or run the container with
 
     sudo docker run -d -p 443:8888 -v my_image_folder:/home/myimagery/ --name=crc4 mort/crc4docker
 
@@ -14,7 +14,7 @@ container in detached mode.
 Point your browser to http://localhost:443 to see the Jupyter notebook home page.  Stop with
 
     sudo docker stop crc4  
-    
+     
 Re-start with
 
     sudo docker start crc4    
