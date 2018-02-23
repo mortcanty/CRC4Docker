@@ -4,31 +4,16 @@
 #  Purpose:  auxiliary functions for processing multispectral imagery 
 #  Usage:             
 #    import auxil
-#
-#  Copyright (c) 2012, Mort Canty
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
 
 import numpy as np  
-import math, platform, StringIO
-from . import png   
-# comment out for GAE deployment---------
+import math, ctypes  
 from numpy.ctypeslib import ndpointer
-import ctypes
 from scipy.special import betainc 
 from numpy.fft import fft2, ifft2, fftshift 
 import scipy.ndimage.interpolation as ndii 
-if platform.system() == 'Windows': 
-    lib = ctypes.cdll.LoadLibrary('prov_means.dll')
-elif platform.system() == 'Linux':
-    lib = ctypes.cdll.LoadLibrary('libprov_means.so')    
+
+# wrap the provisional means dll
+lib = ctypes.cdll.LoadLibrary('libprov_means.so')    
 provmeans = lib.provmeans 
 provmeans.restype = None   
 c_double_p = ctypes.POINTER(ctypes.c_double) 
@@ -39,7 +24,6 @@ provmeans.argtypes = [ndpointer(np.float64),
                       c_double_p,
                       ndpointer(np.float64),
                       ndpointer(np.float64)]  
-#----------------------------------------
 
 # color table
 ctable = [ 0,0,0,       255,0,0,    0,255,0,     0,0,255, \
@@ -47,43 +31,6 @@ ctable = [ 0,0,0,       255,0,0,    0,255,0,     0,0,255, \
            46,139,87,   255,0,0,    205,0,0,     0,255,0, \
            0,200,200,   85,107,47,  189,183,107, 255,160,122, \
            240,128,128, 255,69,0]
-
-# --------------------
-# contrast enhancement
-# -------------------
-def linstr(x):
-# linear stretch  
-    x = np.asarray(x,dtype=np.float32)  
-    mx = np.max(x)
-    mn = np.min(x)  
-    x = (x-mn)*255.0/(mx-mn)
-    return np.asarray(x,dtype=np.uint8)
-
-def histeqstr(x): 
-#  histogram equalization stretch of input ndarray    
-    hist,bin_edges = np.histogram(x,256,(0,256)) 
-    cdf = hist.cumsum()
-    lut = 255*cdf/float(cdf[-1]) 
-    return np.interp(x,bin_edges[:-1],lut)
-
-def lin2pcstr(x):        
-#  2% linear stretch    
-    hist,bin_edges = np.histogram(x,256,(0,256))
-    cdf = hist.cumsum()
-    lower = 0
-    i = 0
-    while cdf[i] < 0.02*cdf[-1]:
-        lower += 1
-        i += 1
-    upper = 255    
-    i = 255
-    while cdf[i] > 0.98*cdf[-1]:
-        upper -= 1
-        i -= 1
-    fp = (bin_edges-lower)*255/(upper-lower) 
-    fp = np.where(bin_edges<=lower,0,fp)
-    fp = np.where(bin_edges>=upper,255,fp)
-    return np.interp(x,bin_edges,fp)
 
 # ---------------------
 # orthogonal regression
@@ -143,7 +90,7 @@ def gaussfilter(sigma,n,m):
     result = []
     for d in dst:
         result.append( math.exp(-d**2/(2*sigma**2)) )
-    return result 
+    return np.reshape(np.array(result),(m,n)) 
 
 # -----------------
 # provisional means
@@ -174,145 +121,7 @@ class Cpm(object):
         return c + c.T - d
     
     def means(self):
-        return self.mn            
-
-# --------------------------
-# data array (design matrix)
-# --------------------------
-
-class DataArray(object):
-    '''Representation of an image or image blob (string)
-    as a samples*lines by bands float32 numpy array.
-    Image must have BIP or BSQ interleave and uint8 or float32 format'''
-    def __init__(self,image,samples,lines,bands,interleave,dtype):
-        m = samples*lines
-        if isinstance(image,str):
-            if dtype == 1:
-                data = np.fromstring(image,dtype=np.uint8)
-            else:
-                data = np.fromstring(image,dtype=np.float32)
-        else:
-            data = np.asarray(image,np.float32)
-        if interleave == 'bsq':
-            data = [data[i::m] for i in range(m)]                
-        self.data = np.reshape(data,(m,bands))             
-        self.samples = samples
-        self.lines = lines
-        self.pixels = samples*lines
-        self.bands = bands
-       
-    def covw(self, da=None, w=None):
-#  return (weighted) means of self as row vector and (weighted) variance-covariance matrix of self
-#  if da is supplied, returns (weighted) covariance matrix of self with da       
-        try:
-            if w is None:
-                w = np.ones(self.pixels,dtype=np.float32)
-            if da is not None:
-                b = np.transpose(da.data)
-                if self.pixels != da.pixels:
-                    raise
-            a = np.transpose(self.data)
-            sumw = np.sum(w)
-            ws = np.tile(w,(self.bands,1))
-            meansa = np.mat(np.sum(np.multiply(ws,a),1)/sumw,dtype=np.float32)
-            mns = np.tile(meansa.T,(1,self.pixels))
-            ac = a - mns
-            ac = np.mat(np.multiply(ac,np.sqrt(ws)))
-            if da is None:
-                bc = ac
-            else:
-                meansb = np.mat(np.sum(np.multiply(ws,b),1)/sumw,dtype=np.float32)
-                mns = np.tile(meansb.T,(1,self.pixels))
-                bc = b - mns
-                bc = np.mat(np.multiply(bc,np.sqrt(ws)))                
-            covmat = ac*bc.T/sumw
-            return (meansa,covmat)
-        except:
-            return None   
-        
-def make_png_rgb(samples,lines,band1,band2,band3):
-# return an rgb png image from 3 bytestrings     
-#  make a boxed row flat pixel array for png.Writer                    
-    size = samples*lines
-    RGB = np.fromstring(band1+band2+band3,dtype=np.uint8)
-    RGB = np.reshape(RGB, (3,size)).transpose()
-    RGB = np.reshape(RGB,(lines,3*samples)).tolist()
-#  file object              
-    f = StringIO.StringIO() 
-#  create PNG            
-    w = png.Writer(samples,lines)
-    w.write(f,RGB)           
-    return f.getvalue()    
-
-# histogram stretches for bytestring image representations  
-def lin(band):
-    band = np.fromstring(band,dtype=np.uint8)
-    band = linstr(band)
-    return np.asarray(band,np.uint8).tostring()
-
-def lin2pc(band):        
-#  2% linear stretch    
-    band = np.fromstring(band,dtype=np.uint8)
-    band = lin2pcstr(band)
-    return np.asarray(band,np.uint8).tostring()
-    
-def histeq(band):
-#  histogram equalization    
-    band = np.fromstring(band,dtype=np.uint8)
-    band = histeqstr(band)
-    return np.asarray(band,np.uint8).tostring()
-    
-
-def stretch(redband,greenband,blueband,enhance):
-    if enhance=='linear2pc':
-        return (lin2pc(redband),lin2pc(greenband),lin2pc(blueband))                                                      
-    elif enhance=="equalization":
-        return (histeq(redband),histeq(greenband),histeq(blueband))              
-    elif enhance=='linear':                                                                                                       
-        return (lin(redband),lin(greenband),lin(blueband))
-    else: # do nothing
-        return (redband,greenband,blueband)
-
-def byte_stretch(band,dtype=1,rng=None):
-#  byte stretch an image band coded as string 
-    if dtype == 1:  
-        tmp = np.fromstring(band,dtype=np.uint8)
-    elif dtype == 2:
-        tmp = np.fromstring(band,dtype=np.uint16) 
-    elif dtype == 4:
-        tmp = np.fromstring(band,dtype=np.float32)  
-    else:
-        tmp = np.fromstring(band,dtype=np.float64)          
-    if rng is None:
-        rng = [np.min(tmp),np.max(tmp)]
-    tmp = (tmp-rng[0])*255.0/(rng[1]-rng[0])  
-    tmp = np.where(tmp<0,0,tmp)  
-    tmp = np.where(tmp>255,255,tmp) 
-    return np.asarray(tmp,np.uint8).tostring()
-    
-def normalize(da,coeffs):    
-# return normalized bsq image string from input data array    
-    result = ''
-    for k in range(da.bands):
-        b = coeffs[k,0]
-        a = coeffs[k,1]
-        g = da.data[:,k]*b+a
-        g = np.where(g<0,0,g)
-        g = np.where(g>255,255,g)
-        g = np.asarray(g,np.uint8)
-        result += g.tostring() 
-    return result       
-
-def byteStretch(arr,rng=None):
-#  byte stretch image numpy array
-    shp = arr.shape
-    arr = arr.ravel()
-    if rng is None:
-        rng = [np.min(arr),np.max(arr)]
-    tmp =  (arr-rng[0])*255.0/(rng[1]-rng[0])
-    tmp = np.where(tmp<0,0,tmp)  
-    tmp = np.where(tmp>255,255,tmp) 
-    return np.asarray(np.reshape(tmp,shp),np.uint8)    
+        return self.mn                     
 
 # ---------
 # kernels
@@ -346,7 +155,6 @@ def center(K):
 # ------------------------    
 # generalized eigenproblem
 # ------------------------   
-    
 def choldc(A):
 # Cholesky-Banachiewicz algorithm, 
 # A is a numpy matrix
@@ -369,58 +177,9 @@ def geneiv(A,B):
     Li = np.linalg.inv(choldc(B))
     C = Li*A*(Li.transpose())
     C = np.asmatrix((C + C.transpose())*0.5,np.float32)
-    eivs,V = np.linalg.eig(C)
-    return eivs, Li.transpose()*V     
+    lambdas,V = np.linalg.eig(C)
+    return lambdas, Li.transpose()*V     
 
-# ------------------------------------------------
-# spectral transformations, use DataArray objects,
-# return results as float32 image blobs
-# ------------------------------------------------
-
-def pca(da):
-    try:
-        means,covmat = da.covw()        
-        lams,eivs = np.linalg.eigh(covmat)
-#      sort eivs in decreasing order of variance  
-        idx = (np.argsort(lams))[::-1]
-        lams = lams[idx]
-        eivs = np.mat(eivs[:,idx],np.float32)
-#      project in bsq format, single precision, flattened
-        mns = np.tile(means,(da.pixels,1))
-        ac = np.mat(da.data - mns)
-        mns = None
-#      PCs in bsq format        
-        pcs = (ac*eivs).T                           
-        pcs = pcs.ravel().tostring()
-        return (lams,pcs)                     
-    except:
-        return None            
-    
-def mnf(da,samples,lines,bands):  
-    try:    
-#      center          
-        means,S = da.covw()
-        mns = np.asarray(np.tile(means,(da.pixels,1)))
-        img = da.data - mns   
-        mns = None   
-#      shifted image      
-        imgs = np.reshape(img, (samples,lines,bands) ) 
-        imgn = imgs - (np.roll(imgs,1,axis=0)+np.roll(imgs,1,axis=1))/2
-#      noise covariance        
-        dan = DataArray(imgn.tostring(),samples,lines,bands,'bip',4) 
-        Sn = dan.covw()[1]/2  
-#      mnf, eigenvalues sorted in increasing order        
-        lams,eivs = geneiv(Sn,S)
-        idx = (np.argsort(lams))
-        lams = lams[idx]
-        eivs = (eivs[:,idx]).T
-#      MNFs in bsq format        
-        mnfs = eivs*np.mat(img).T
-        mnfs = mnfs.ravel().tostring()
-        return (lams,mnfs)    
-    except:
-        return None            
-    
 def similarity(bn0, bn1):
     """Register bn1 to bn0 ,  M. Canty 2012
 bn0, bn1 and returned result are image bands      
@@ -697,7 +456,59 @@ class ATWTArray(object):
     def invert(self):
         if self.num_iter > 0:
             self.bands[0,:,:] += self.bands[self.num_iter,:,:]
-            self.num_iter -= 1    
+            self.num_iter -= 1  
+            
+# --------------------
+# contrast enhancement
+# -------------------
+def linstr(x):
+# linear stretch
+    return bytestr(x)
+    
+def histeqstr(x):
+    x = bytestr(x)
+#  histogram equalization stretch
+    hist,bin_edges = np.histogram(x,256,(0,256))
+    cdf = hist.cumsum()
+    lut = 255*cdf/float(cdf[-1])
+    return np.interp(x,bin_edges[:-1],lut)
+
+def lin2pcstr(x):
+#  2% linear stretch
+    x = bytestr(x)
+    hist,bin_edges = np.histogram(x,256,(0,256))
+    cdf = hist.cumsum()
+    lower = 0
+    i = 0
+    while cdf[i] < 0.02*cdf[-1]:
+        lower += 1
+        i += 1
+    upper = 255
+    i = 255
+    while cdf[i] > 0.98*cdf[-1]:
+        upper -= 1
+        i -= 1
+    fp = (bin_edges-lower)*255/(upper-lower)
+    fp = np.where(bin_edges<=lower,0,fp)
+    fp = np.where(bin_edges>=upper,255,fp)
+    return np.interp(x,bin_edges,fp)     
+
+def bytestr(x):       
+    mx = np.max(x)
+    mn = np.min(x)  
+    if mx-mn > 0:
+        x = (x-mn)*255.0/(mx-mn)    
+    x = np.where(x<0,0,x)  
+    x = np.where(x>255,255,x)
+    return  x  
+
+def rebin(a, new_shape):
+    M, N = a.shape
+    m, n = new_shape
+    if m<M:
+        return a.reshape((m,M/m,n,N/n)).mean(3).mean(1)
+    else:
+        return np.repeat(np.repeat(a, m/M, axis=0), n/N, axis=1)
             
 if __name__ == '__main__':
     pass

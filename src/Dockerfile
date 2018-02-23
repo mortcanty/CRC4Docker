@@ -5,7 +5,7 @@
 FROM     debian:jessie  
            
 MAINTAINER Mort Canty "mort.canty@gmail.com"
-ENV     REFRESHED_AT 2017-12-13a
+ENV     REFRESHED_AT 2018-01-14
 
 RUN apt-get update && apt-get install -y \
     python \
@@ -52,13 +52,14 @@ RUN     pip install -U scikit-learn
 EXPOSE 8888
 
 # install auxil
-COPY    dist/auxil-1.1.tar.gz /home/auxil-1.1.tar.gz
-RUN     tar -xzvf auxil-1.1.tar.gz
-WORKDIR /home/auxil-1.1
+ENV     REFRESHED_AT 2018-01-14
+COPY    dist/auxil-1.0.tar.gz /home/auxil-1.0.tar.gz
+RUN     tar -xzvf auxil-1.0.tar.gz
+WORKDIR /home/auxil-1.0
 RUN     python setup.py install  
 WORKDIR /home
-RUN     rm -rf auxil-1.1
-RUN     rm auxil-1.1.tar.gz
+RUN     rm -rf auxil-1.0
+RUN     rm auxil-1.0.tar.gz
 
 # setup for earthengine
 RUN     pip install pyasn1 --upgrade
@@ -71,11 +72,18 @@ RUN     pip install earthengine-api
 # tensorflow
 RUN     pip install tensorflow
 
+# opencv
+RUN     pip install opencv-python
+
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
 ADD     imagery /home/imagery
-COPY    Chapter1.ipynb /home/Chapter1.ipynb
-COPY    Chapter2.ipynb /home/Chapter2.ipynb
+#COPY    Chapter1.ipynb /home/Chapter1.ipynb
+#COPY    Chapter2.ipynb /home/Chapter2.ipynb
+#COPY    Chapter3.ipynb /home/Chapter3.ipynb
+
+# workalong script for ZFL GEE April 2018
+COPY    zflgee.ipynb /home/zflgee.ipynb
 
 # ipython notebook startup script
 ADD     notebook.sh /

@@ -1,1 +1,1 @@
-__all__ = ["auxil","congrid","header","png","polsar","supervisedclass"]
+__all__ = ["auxil","congrid","header","png","eepca","supervisedclass"]

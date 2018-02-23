@@ -2,11 +2,11 @@
 #Name:  ex1_2.py
 import numpy as np
 from osgeo import gdal
+import sys
 from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
 
-def main(): 
+def pca(infile,outfile): 
     gdal.AllRegister()
-    infile = '../imagery/may0107' 
                   
     inDataset = gdal.Open(infile,GA_ReadOnly)     
     cols = inDataset.RasterXSize
@@ -37,7 +37,6 @@ def main():
     PCs = np.reshape(np.array(G*U),(rows,cols,bands))   
     
 #  write to disk       
-    outfile = '../imagery/pca.tif'
     if outfile:
         driver = gdal.GetDriverByName('Gtiff')   
         outDataset = driver.Create(outfile,
@@ -53,4 +52,8 @@ def main():
     inDataset = None        
  
 if __name__ == '__main__':
-    main()    
+    infile = sys.argv[1]
+    outfile = sys.argv[2]  
+    pca(infile,outfile)  
+    
+    

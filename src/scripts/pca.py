@@ -3,18 +3,8 @@
 #  Name:     pca.py
 #  Purpose:  Principal components analysis
 #  Usage (from command line):             
-#    python pca.py  [-d spatialDimensions] fileNmae
-#
-#  Copyright (c) 2011, Mort Canty
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+#    python pca.py  [options] fileNmae
+
 import numpy as np
 import os, sys, getopt, time
 from osgeo import gdal
@@ -24,7 +14,7 @@ from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
 def main(): 
     usage = '''Usage: python %s [-h] [-r N] [-n] [-d dims] [-p pos] fileName\n
             spatial and spectral dimensions are lists, e.g., -d [0,0,400,400] \n
-            use -r N to reconstuct image with first N pcs, use -n to disable graphics output'''%sys.argv[0]
+            use -r N to reconstruct image with first N pcs, use -n to disable graphics output'''%sys.argv[0]
     options,args = getopt.getopt(sys.argv[1:],'hr:nd:p:')
     dims = None
     pos = None
@@ -134,7 +124,7 @@ def main():
             outBand = outDataset.GetRasterBand(k+1)
             outBand.WriteArray(GRs[:,:,k],0,0) 
             outBand.FlushCache() 
-        print 'Reconstruction writen to: %s'%outfile1        
+        print 'Reconstruction written to: %s'%outfile1        
     outDataset = None    
     inDataset = None           
     print 'elapsed time: %s'%str(time.time()-start) 

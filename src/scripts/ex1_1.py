@@ -1,20 +1,17 @@
 #!/usr/bin/env python
 #  Name:     ex1_1.py
 import  numpy as np 
+import sys
 from osgeo import gdal   
 from osgeo.gdalconst import GA_ReadOnly 
 import matplotlib.pyplot as plt
  
-def main():  
-        
-    gdal.AllRegister() 
-    infile = '../imagery/may0107'
-                
+def disp(infile,bandnumber):        
+    gdal.AllRegister()             
     inDataset = gdal.Open(infile,GA_ReadOnly)     
     cols = inDataset.RasterXSize
     rows = inDataset.RasterYSize 
     bands = inDataset.RasterCount   
-
 
     image = np.zeros((bands,rows,cols))                              
     for b in range(bands):
@@ -23,11 +20,13 @@ def main():
     inDataset = None
 
 #  display NIR band    
-    band0 = image[2,:,:]   
-    mn = np.amin(band0)
-    mx = np.amax(band0)
-    plt.imshow((band0-mn)/(mx-mn), cmap='gray' )  
+    band = image[bandnumber-1,:,:]   
+    mn = np.amin(band)
+    mx = np.amax(band)
+    plt.imshow((band-mn)/(mx-mn), cmap='gray')  
     plt.show()                        
 
 if __name__ == '__main__':
-    main()    
+    infile = sys.argv[1]
+    bandnumber = int(sys.argv[2])   
+    disp(infile,bandnumber)

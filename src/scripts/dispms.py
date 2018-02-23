@@ -5,103 +5,14 @@
 #             allowed formats: uint8, uint16,float32,float64 
 #  Usage (from command line):             
 #    python dispms.py  [OPTIONS]
-#
-# MIT License
-# 
-# Copyright (c) 2016 Mort Canty
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
 
 import sys, getopt, os
-from osgeo import gdal, osr
-from osgeo.gdalconst import GDT_Byte, GA_ReadOnly
+from osgeo import gdal
+from osgeo.gdalconst import GA_ReadOnly
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
-
-
-def klm(fn,dims):
-    KLM = '''<?xml version="1.0" encoding="UTF-8"?>
-    <kml xmlns="http://www.opengis.net/kml/2.2">
-      <Folder>
-        <name>Ground Overlay</name>
-        <description>Change map overlay</description>
-        <GroundOverlay>
-          <name>Change map overlay</name>
-          <description>SAR change detection.</description>
-          <Icon>
-            _image_
-          </Icon>
-          <LatLonBox>
-            <north>_north_</north>
-            <south>_south_</south>
-            <east>_east_</east>
-            <west>_west_</west>
-            <rotation>-0.0</rotation>
-          </LatLonBox>
-        </GroundOverlay>
-      </Folder>
-    </kml> '''
-    try:
-        imageDataset = gdal.Open(fn,GA_ReadOnly)
-        cols = imageDataset.RasterXSize
-        rows = imageDataset.RasterYSize           
-        gt =   imageDataset.GetGeoTransform()
-#      correct for subsetting
-        x0,y0,cols,rows = dims
-        gt = list(gt)
-        gt[0] = gt[0] + x0*gt[1] + y0*gt[2]
-        gt[3] = gt[3] + x0*gt[4] + y0*gt[5]
-#      get footprint
-        ulx = gt[0]  
-        uly = gt[3]
-        urx = gt[0] + cols*gt[1]
-        ury = gt[3] + cols*gt[4]
-        llx = gt[0]              + rows*gt[2]
-        lly = gt[3]              + rows*gt[5]
-        lrx = gt[0] + cols*gt[1] + rows*gt[2]
-        lry = gt[3] + cols*gt[4] + rows*gt[5]
-#      get image coordinate system       
-        old_cs = osr.SpatialReference()
-        old_cs.ImportFromWkt(imageDataset.GetProjection())
-#      create the lonlat coordinate system
-        new_cs = osr.SpatialReference()  
-        new_cs.SetWellKnownGeogCS('WGS84')              
-#      create a transform object to convert between coordinate systems
-        transform = osr.CoordinateTransformation(old_cs,new_cs)                                          
-#      get the bounding coordinates in lonlat (no elevation)
-        coords = []
-        coords.append(list(transform.TransformPoint(ulx,uly)[0:2]))      
-        coords.append(list(transform.TransformPoint(urx,ury)[0:2])) 
-        coords.append(list(transform.TransformPoint(llx,lly)[0:2]))
-        coords.append(list(transform.TransformPoint(lrx,lry)[0:2])) 
-#      get the klm LatLonBox dimensions
-        north = coords[0][1]; south = coords[2][1]; east = coords[1][0] ; west = coords[0][0] 
-#      edit the KLM string
-        KLM = KLM.replace('_north_',str(north))   
-        KLM = KLM.replace('_south_',str(south))
-        KLM = KLM.replace('_east_',str(east))   
-        KLM = KLM.replace('_west_',str(west))
-        return KLM
-    except Exception as e:
-        print 'Error: %s  Could not get image footprint'%e
-        return None   
+import auxil.auxil as auxil
 
 def make_image(redband,greenband,blueband,rows,cols,enhance):
     X = np.ones((rows*cols,3),dtype=np.uint8) 
@@ -109,66 +20,25 @@ def make_image(redband,greenband,blueband,rows,cols,enhance):
         i = 0
         for tmp in [redband,greenband,blueband]:
             tmp = tmp.ravel()
-            tmp = np.where(tmp<0,0,tmp)  
-            tmp = np.where(tmp>255,255,tmp)
-            X[:,i] = np.byte(tmp)
+            X[:,i] = auxil.bytestr(tmp)
             i += 1
     elif enhance == 'linear':
         i = 0
         for tmp in [redband,greenband,blueband]:             
             tmp = tmp.ravel()  
-            mx = np.max(tmp)
-            mn = np.min(tmp)  
-            if mx-mn > 0:
-                tmp = (tmp-mn)*255.0/(mx-mn)    
-            tmp = np.where(tmp<0,0,tmp)  
-            tmp = np.where(tmp>255,255,tmp)
-            X[:,i] = np.byte(tmp)
+            X[:,i] = auxil.linstr(tmp)
             i += 1
     elif enhance == 'linear2pc':
         i = 0
         for tmp in [redband,greenband,blueband]:     
             tmp = tmp.ravel()        
-            mx = np.max(tmp)
-            mn = np.min(tmp)  
-            if mx-mn > 0:
-                tmp = (tmp-mn)*255.0/(mx-mn)  
-            tmp = np.where(tmp<0,0,tmp)  
-            tmp = np.where(tmp>255,255,tmp)
-            hist,bin_edges = np.histogram(tmp,256,(0,256))
-            cdf = hist.cumsum()
-            lower = 0
-            j = 0
-            while cdf[j] < 0.02*cdf[-1]:
-                lower += 1
-                j += 1
-            upper = 255    
-            j = 255
-            while cdf[j] > 0.98*cdf[-1]:
-                upper -= 1
-                j -= 1
-            if upper==0:
-                upper = 255
-                print 'Saturated stretch failed'
-            fp = (bin_edges-lower)*255/(upper-lower) 
-            fp = np.where(bin_edges<=lower,0,fp)
-            fp = np.where(bin_edges>=upper,255,fp)
-            X[:,i] = np.byte(np.interp(tmp,bin_edges,fp))
+            X[:,i] = auxil.lin2pcstr(tmp)
             i += 1       
     elif enhance == 'equalization':   
         i = 0
         for tmp in [redband,greenband,blueband]:     
-            tmp = tmp.ravel()    
-            mx = np.max(tmp)
-            mn = np.min(tmp)  
-            if mx-mn > 0:
-                tmp = (tmp-mn)*255.0/(mx-mn)  
-            tmp = np.where(tmp<0,0,tmp)  
-            tmp = np.where(tmp>255,255,tmp)  
-            hist,bin_edges = np.histogram(tmp,256,(0,256)) 
-            cdf = hist.cumsum()
-            lut = 255*cdf/float(cdf[-1]) 
-            X[:,i] = np.byte(np.interp(tmp,bin_edges[:-1],lut))
+            tmp = tmp.ravel()                
+            X[:,i] = auxil.histeqstr(tmp) 
             i += 1
     elif enhance == 'logarithmic':   
         i = 0
@@ -187,30 +57,12 @@ def make_image(redband,greenband,blueband,rows,cols,enhance):
                 tmp = (tmp-mn)*255.0/(mx-mn)    
             tmp = np.where(tmp<0,0,tmp)  
             tmp = np.where(tmp>255,255,tmp)
-#          2% linear stretch           
-            hist,bin_edges = np.histogram(tmp,256,(0,256))
-            cdf = hist.cumsum()
-            lower = 0
-            j = 0
-            while cdf[j] < 0.02*cdf[-1]:
-                lower += 1
-                j += 1
-            upper = 255    
-            j = 255
-            while cdf[j] > 0.98*cdf[-1]:
-                upper -= 1
-                j -= 1
-            if upper==0:
-                upper = 255
-                print 'Saturated stretch failed'
-            fp = (bin_edges-lower)*255/(upper-lower) 
-            fp = np.where(bin_edges<=lower,0,fp)
-            fp = np.where(bin_edges>=upper,255,fp)
-            X[:,i] = np.byte(np.interp(tmp,bin_edges,fp))
+#          2% linear stretch   
+            X[:,i] = auxil.lin2pcstr(tmp)        
             i += 1                           
     return np.reshape(X,(rows,cols,3))/255.
 
-def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,enhance=None,ENHANCE=None,KLM=None,cls=None,CLS=None,alpha=None):
+def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,enhance=None,ENHANCE=None,sfn=None,cls=None,CLS=None,alpha=None):
     gdal.AllRegister()
     if filename1 == None:        
         filename1 = raw_input('Enter image filename: ')
@@ -374,22 +226,9 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
 #            plt.axis('off')            
 #            plt.savefig('/home/imagery/fig4.eps', format='eps', dpi=600)
         ax.set_title('%s: %s: %s: %s\n'%(os.path.basename(filename1),enhance1, str(rgb), str(dims))) 
-    if KLM:
-        X1 = np.array(X1*255,dtype=np.uint8)           
-        driver = gdal.GetDriverByName( 'GTiff' )
-        ds = driver.Create( '/home/tmp.tif', cols, rows, 3, GDT_Byte)           
-        for i in range(3):        
-            outBand = ds.GetRasterBand(i+1)
-            outBand.WriteArray(X1[:,:,i],0,0) 
-            outBand.FlushCache()      
-        driver = gdal.GetDriverByName( 'PNG' )
-        driver.CreateCopy('/home/imagery/overlay.png', ds, 0)
-        os.remove('/home/tmp.tif')            
-        with open('/home/imagery/overlay_png.kml','w') as f:
-            print >>f, klm(filename1,dims).replace('_image_','overlay.png')           
-            f.close()
-    plt.show()
-                      
+    if sfn is not None:
+        plt.savefig(sfn,bbox_inches='tight')
+    plt.show()                 
 
 def main():
     usage = '''
@@ -410,11 +249,11 @@ Options:
   -d -D    spatial subset lists e.g. -d [0,0,200,200]
   -c -C    display as classification image
   -o alpha overlay left image onto right with opacity alpha
-  -k       generate approximate KML overlay image
+  -s fn    save the figure to file fn      
   
   -------------------------------------'''%sys.argv[0]
   
-    options,_ = getopt.getopt(sys.argv[1:],'hkco:Cf:F:p:P:d:D:e:E:')
+    options,_ = getopt.getopt(sys.argv[1:],'hco:Cf:F:p:P:d:D:e:E:s:')
     filename1 = None
     filename2 = None
     dims = None
@@ -426,13 +265,13 @@ Options:
     alpha = None
     cls = None
     CLS = None
-    KLM = None
+    sfn = None
     for option, value in options: 
         if option == '-h':
             print usage
             return 
-        elif option == '-k':
-            KLM = True
+        elif option == '-s':
+            sfn = value
         elif option =='-o':
             alpha = eval(value)
         elif option == '-f':
@@ -456,7 +295,7 @@ Options:
         elif option == '-C':
             CLS = True              
                     
-    dispms(filename1,filename2,dims,DIMS,rgb,RGB,enhance,ENHANCE,KLM,cls,CLS,alpha)
+    dispms(filename1,filename2,dims,DIMS,rgb,RGB,enhance,ENHANCE,sfn,cls,CLS,alpha)
 
 if __name__ == '__main__':
     main()

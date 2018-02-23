@@ -1,0 +1,4 @@
+#!/bin/bash
+source activate crc4
+cd src
+jupyter notebook

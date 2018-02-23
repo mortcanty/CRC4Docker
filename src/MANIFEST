@@ -3,6 +3,7 @@ setup.py
 auxil/__init__.py
 auxil/auxil.py
 auxil/congrid.py
+auxil/eepca.py
 auxil/header.py
 auxil/lookup.py
 auxil/png.py
