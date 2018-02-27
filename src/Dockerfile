@@ -77,7 +77,7 @@ RUN     pip install opencv-python
 
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
-ADD     imagery /home/imagery
+ADD     imagery_initial /home/imagery
 #COPY    Chapter1.ipynb /home/Chapter1.ipynb
 #COPY    Chapter2.ipynb /home/Chapter2.ipynb
 #COPY    Chapter3.ipynb /home/Chapter3.ipynb

@@ -17,63 +17,84 @@
 #    GNU General Public License for more details.
 
 import auxil.auxil as auxil
-import os, time, copy
+import os, sys, getopt, time, copy
 import numpy as np
 from osgeo import gdal
 import scipy.ndimage.interpolation as ndii
 from osgeo.gdalconst import GA_ReadOnly, GDT_Float32      
 
 def main():
+    usage = '''
+Usage:
+-----------------------------------------------------------------------
+python %s [-d spatialDimensions] [-p bandPositions [-r resolution ratio]
+[-b registration band]  msfilename panfilename 
+-----------------------------------------------------------------------
+bandPositions and spatialDimensions are lists, 
+e.g., -p [1,2,3] -d [0,0,400,400]
+
+Outfile name is msfilename_pan_dwt with same format as msfilename    
+
+Note: PAN image must completely overlap MS image subset chosen  
+-----------------------------------------------------''' %sys.argv[0]
+    options, args = getopt.getopt(sys.argv[1:],'hd:p:r:b:')
+    ratio = 4
+    dims1 = None
+    pos1 = None  
+    k1 = 0          
+    for option, value in options:
+        if option == '-h':
+            print usage
+            return 
+        elif option == '-r':
+            ratio = eval(value)
+        elif option == '-d':
+            dims1 = eval(value) 
+        elif option == '-p':
+            pos1 = eval(value)    
+        elif option == '-b':
+            k1 = eval(value)-1
+    if len(args) != 2:
+        print 'Incorrect number of arguments'
+        print usage
+        sys.exit(1)                         
     gdal.AllRegister()
-    path = auxil.select_directory('Choose working directory')
-    if path:
-        os.chdir(path)        
+    file1 = args[0]
+    file2 = args[1]   
+    path = os.path.dirname(file1)
+    basename1 = os.path.basename(file1)
+    root1, ext1 = os.path.splitext(basename1)
+    outfile = '%s/%s_pan_dwt%s'%(path,root1,ext1)       
 #  MS image    
-    file1 = auxil.select_infile(title='Choose MS image') 
-    if file1:                   
-        inDataset1 = gdal.Open(file1,GA_ReadOnly)     
+    inDataset1 = gdal.Open(file1,GA_ReadOnly)     
+    try:    
         cols = inDataset1.RasterXSize
         rows = inDataset1.RasterYSize    
         bands = inDataset1.RasterCount
-    else:
-        return
-    pos1 =  auxil.select_pos(bands) 
-    if not pos1:
-        return   
-    num_bands = len(pos1)
-    dims = auxil.select_dims([0,0,cols,rows])
-    if dims:
-        x10,y10,cols1,rows1 = dims
-    else:
-        return 
-#  PAN image     
-    file2 = auxil.select_infile(title='Choose PAN image') 
-    if file2:                  
-        inDataset2 = gdal.Open(file2,GA_ReadOnly)       
+    except Exception as e:
+        print 'Error: %e --Image could not be read'%e
+        sys.exit(1)    
+    if pos1 is None:
+        pos1 = range(1,bands+1)
+    num_bands = len(pos1)    
+    if dims1 is None:
+        dims1 = [0,0,cols,rows]
+    x10,y10,cols1,rows1 = dims1    
+#  PAN image    
+    inDataset2 = gdal.Open(file2,GA_ReadOnly)     
+    try:  
         bands = inDataset2.RasterCount
-    else:
-        return   
+    except Exception as e:
+        print 'Error: %e --Image could not be read'%e  
+        sys.exit(1)   
     if bands>1:
-        print 'Must be a single band (panchromatic) image'
-        return 
+        print 'PAN image must be a single band'
+        sys.exit(1)     
     geotransform1 = inDataset1.GetGeoTransform()
-    geotransform2 = inDataset2.GetGeoTransform()        
-#  outfile
-    outfile, fmt = auxil.select_outfilefmt()  
-    if not outfile:
-        return 
-#  resolution ratio      
-    ratio = auxil.select_integer(4, 'Resolution ratio (2 or 4)') 
-    if not ratio:
-        return        
-#  MS registration band    
-    k1 = auxil.select_integer(1, 'MS band for registration') 
-    if not k1:
-        return  
-#  fine adjust
-    roll = auxil.select_integer(0, 'Fine adjust (-2 ... 2)') 
-    if roll is None:
-        return        
+    geotransform2 = inDataset2.GetGeoTransform()   
+    if (geotransform1 is None) or (geotransform2 is None):
+        print 'Image not georeferenced, aborting' 
+        sys.exit(1)      
     print '========================='
     print '   DWT Pansharpening'
     print '========================='
@@ -122,7 +143,7 @@ def main():
         r /= 2
     bn0 = panDWT.get_quadrant(0) 
     lines0,samples0 = bn0.shape    
-    bn1 = MS[k1-1,:,:]  
+    bn1 = MS[k1,:,:]  
 #  register (and subset) MS image to compressed PAN image 
     (scale,angle,shift) = auxil.similarity(bn0,bn1)
     tmp = np.zeros((num_bands,lines0,samples0))
@@ -132,16 +153,7 @@ def main():
         bn2 = ndii.rotate(bn2, angle)
         bn2 = ndii.shift(bn2, shift)
         tmp[k,:,:] = bn2[0:lines0,0:samples0]        
-    MS = tmp   
-    if roll != 0:
-#  fine adjust                            
-        PAN = np.roll(PAN,roll,axis=0)
-        PAN = np.roll(PAN,roll,axis=1)
-        panDWT = auxil.DWTArray(PAN,cols2,rows2)          
-        r = ratio
-        while r > 1:
-            panDWT.filter()
-            r /= 2                   
+    MS = tmp            
 #  compress pan once more, extract wavelet quadrants, and restore
     panDWT.filter()  
     fgpan = panDWT.get_quadrant(1)
@@ -181,7 +193,7 @@ def main():
         sharpened[i,:,:] = msDWT.get_quadrant(0)      
     sharpened *= fact    
 #  write to disk       
-    driver = gdal.GetDriverByName(fmt)   
+    driver = inDataset1.GetDriver()
     outDataset = driver.Create(outfile,cols2,rows2,num_bands,GDT_Float32)
     projection1 = inDataset1.GetProjection()
     if projection1 is not None:

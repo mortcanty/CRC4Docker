@@ -1,0 +1,26 @@
+ENVI
+description = {
+  Registration Result. Method: 1st degree RST w/ cubic convolution [Fri Jul 28
+  15:12:08 2006] [Fri Jul 28 15:13:13 2006]}
+samples = 1000
+lines   = 1000
+bands   = 6
+header offset = 0
+file type = ENVI Standard
+data type = 1
+interleave = bip
+sensor type = Unknown
+byte order = 0
+x start = 4430
+y start = 843
+map info = {UTM, 1.000, 1.000, 723116.250, 5657264.250, 2.8500000000e+001, 2.8500000000e+001, 31, North, WGS-84, units=Meters}
+wavelength units = Unknown
+band names = {
+ Warp (Band 1 Landsat ETM+:26-June-2001), 
+ Warp (Band 2 Landsat ETM+:26-June-2001), 
+ Warp (Band 3 Landsat ETM+:26-June-2001), 
+ Warp (Band 4 Landsat ETM+:26-June-2001), 
+ Warp (Band 5 Landsat ETM+:26-June-2001), 
+ Warp (Band 7 Landsat ETM+:26-June-2001)}
+wavelength = {
+ 0.450000, 0.520000, 0.630000, 0.760000, 1.550000, 2.080000}

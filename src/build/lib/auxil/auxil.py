@@ -502,6 +502,17 @@ def bytestr(x):
     x = np.where(x>255,255,x)
     return  x  
 
+def byteStretch(arr,rng=None):
+#  byte stretch image numpy array
+    shp = arr.shape
+    arr = arr.ravel()
+    if rng is None:
+        rng = [np.min(arr),np.max(arr)]
+    tmp =  (arr-rng[0])*255.0/(rng[1]-rng[0])
+    tmp = np.where(tmp<0,0,tmp)  
+    tmp = np.where(tmp>255,255,tmp) 
+    return np.asarray(np.reshape(tmp,shp),np.uint8)  
+
 def rebin(a, new_shape):
     M, N = a.shape
     m, n = new_shape

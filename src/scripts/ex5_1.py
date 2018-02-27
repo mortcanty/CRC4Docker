@@ -6,7 +6,7 @@ from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
 import cv2 as cv 
 def main(): 
-    options,args = getopt.getopt(sys.argv[1:],'b:d:a:')
+    options,args = getopt.getopt(sys.argv[1:],'b:a:')
     b = 1
     algorithm = 1
     for option, value in options: 
