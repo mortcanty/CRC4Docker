@@ -83,7 +83,7 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
         nslices = [ slice(0,j) for j in list(newdims) ]
         newcoords = n.mgrid[nslices]
 
-        newcoords_dims = range(n.rank(newcoords))
+        newcoords_dims = range(n.ndim(newcoords))
         #make first index last
         newcoords_dims.append(newcoords_dims.pop(0))
         newcoords_tr = newcoords.transpose(newcoords_dims)

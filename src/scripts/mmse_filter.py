@@ -6,22 +6,12 @@
 #    Lee et al. (1999) IEEE TGARS 37(5), 2363-2373
 #    Oliver and Quegan (2004) Understanding SAR Images, Scitech 
 #  Usage:             
-#    python mmse_filter.py 
+#    python mmse_filter.py [OPTIONS] infile enl
 #
-#  Copyright (c) 2014, Mort Canty
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+#  Copyright (c) 2018, Mort Canty
 
-import auxil.auxil as auxil
 import auxil.congrid as congrid
-import os, sys, time
+import os, sys, time, getopt
 import numpy as np
 from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly, GDT_Float32
@@ -67,30 +57,19 @@ def get_windex(j,cols):
     windex[42:49] = (j+3)*cols + six
     return windex
 
-def main():
-    gdal.AllRegister()
-    path = auxil.select_directory('Choose working directory')
-    if path:
-        os.chdir(path)        
-#  SAR image    
-    infile = auxil.select_infile(title='Choose SAR image') 
-    if infile:                   
-        inDataset = gdal.Open(infile,GA_ReadOnly)     
-        cols = inDataset.RasterXSize
-        rows = inDataset.RasterYSize    
-        bands = inDataset.RasterCount
-    else:
-        return
-#  spatial subset    
-    x0,y0,rows,cols=auxil.select_dims([0,0,rows,cols])    
-#  number of looks
-    m = auxil.select_integer(5,msg='Number of looks')
-    if not m:
-        return
-#  output file
-    outfile,fmt = auxil.select_outfilefmt() 
-    if not outfile:
-        return       
+def mmse_filter(infile, m, dims=None):
+    gdal.AllRegister()                  
+    inDataset = gdal.Open(infile,GA_ReadOnly)     
+    cols = inDataset.RasterXSize
+    rows = inDataset.RasterYSize    
+    bands = inDataset.RasterCount 
+    if dims == None:
+        dims = [0,0,cols,rows]
+    x0,y0,cols,rows = dims      
+    path = os.path.dirname(infile)    
+    basename = os.path.basename(infile)
+    root, ext = os.path.splitext(basename)
+    outfile = path + '/' + root + '_mmse' + ext  
 #  get filter weights from span image
     b = np.ones((rows,cols))
     band = inDataset.GetRasterBand(1)
@@ -156,7 +135,7 @@ def main():
     print ' done'        
 #  filter the image
     outim = np.zeros((rows,cols),dtype=np.float32)
-    driver = gdal.GetDriverByName(fmt)    
+    driver = inDataset.GetDriver()    
     outDataset = driver.Create(outfile,cols,rows,bands,GDT_Float32)
     geotransform = inDataset.GetGeoTransform()
     if geotransform is not None:
@@ -189,7 +168,44 @@ def main():
         outBand.FlushCache() 
     outDataset = None
     print 'result written to: '+outfile 
-    print 'elapsed time: '+str(time.time()-start)                 
+    print 'elapsed time: '+str(time.time()-start)     
+    
+def main():
+    usage = '''
+Usage:
+------------------------------------------------
+
+Run a mmse filter on the elements 
+of a polarimetric matrix image
+
+python %s [OPTIONS] filename enl
+    
+Options:
+
+   -h     this help
+   -d     spatial subset list e.g. -d [0,0,300,300] 
+   
+enl:
+
+  equivalent number of looks   
+    
+------------------------------------------------''' %sys.argv[0]
+    options,args = getopt.getopt(sys.argv[1:],'hd:') 
+    dims = None
+    for option, value in options: 
+        if option == '-h':
+            print usage
+            return 
+        elif option == '-d':
+            dims = eval(value)  
+    if len(args) != 2:
+        print 'Incorrect number of arguments'
+        print usage
+        sys.exit(1)        
+    infile = args[0]
+    m = float(args[1]) 
+    mmse_filter(infile,m,dims)   
+                        
               
 if __name__ == '__main__':
     main()

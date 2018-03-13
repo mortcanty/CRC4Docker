@@ -1,0 +1,18 @@
+ENVI
+description = {
+  AsterDTM output DEM from file E:\satellite images\north
+  korea\yongbyong\aster1b\august 26
+  2003\AST_L1B_00308262003023927_09192003102723.hdf [Thu Jul 21 09:58:57 2005]}
+samples = 600
+lines   = 600
+bands   = 1
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+map info = {UTM, 1.000, 1.000, 734158.171, 4415549.613, 1.5000000000e+001, 1.5000000000e+001, 51, North, WGS-84, units=Meters, rotation=-9.86939900}
+wavelength units = Unknown
+band names = {
+ AsterDTM output DEM}

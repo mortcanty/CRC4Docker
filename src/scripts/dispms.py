@@ -203,7 +203,7 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
                 jet.set_under('black')      
             else:          
                 ax[1].imshow(X2)             
-            ax[1].set_title('%s: %s: %s:  %s\n'%(os.path.basename(filename2),enhance2, str(rgb), str(dims)))
+            ax[1].set_title('%s: %s: %s:  %s\n'%(os.path.basename(filename2),enhance2, str(RGB), str(DIMS)))
     else:
 #      one image
         fig,ax = plt.subplots(figsize=(10,10)) 

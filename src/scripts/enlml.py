@@ -8,22 +8,14 @@
 #    Takes input from covariance matrix format images generated
 #    from polsaringest.py
 #  Usage:             
-#    python enl.py 
+#    python enl.py [OPTIONS] filename
 #
-#  Copyright (c) 2014, Mort Canty
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# MIT License
+# 
+# Copyright (c) 2018 Mort Canty
 
-import auxil.auxil as auxil
 import auxil.lookup as lookup
-import os, sys, time
+import os, sys, getopt, time
 import numpy as np
 import matplotlib.pyplot as plt
 from osgeo import gdal
@@ -43,58 +35,85 @@ def get_windex(j,cols):
     return windex
 
 def main():
-    gdal.AllRegister()
-    path = auxil.select_directory('Choose working directory')
-    if path:
-        os.chdir(path)        
-#  SAR image    
-    infile = auxil.select_infile(title='Choose SAR image') 
-    if infile:                   
-        inDataset = gdal.Open(infile,GA_ReadOnly)     
-        cols = inDataset.RasterXSize
-        rows = inDataset.RasterYSize    
-        bands = inDataset.RasterCount
-    else:
-        return
-#  spatial subset    
-    x0,y0,rows,cols=auxil.select_dims([0,0,rows,cols])    
-#  output file
-    outfile,fmt = auxil.select_outfilefmt() 
-    if not outfile:
-        return       
+    usage = '''
+Usage:
+------------------------------------------------
+
+Calculate the equivalent number of looks for 
+a polarimetric matrix image
+
+python %s [OPTIONS] filename
+
+Options:
+
+   -h    this help
+   -n    suppress graphics output
+   -d    spatial subset list e.g. -d [0,0,400,400]
+
+An ENL image will be written to the same directory with '_enl' appended.
+
+------------------------------------------------''' %sys.argv[0]
+    options,args = getopt.getopt(sys.argv[1:],'hnd:')
+    dims = None
+    graphics = True
+    for option, value in options: 
+        if option == '-h':
+            print usage
+            return 
+        elif option == '-d':
+            dims = eval(value)  
+        elif option == '-n':
+            graphics = False       
+    if len(args) != 1:
+        print 'Incorrect number of arguments'
+        print usage
+        sys.exit(1)        
+    infile = args[0]
+    path = os.path.dirname(infile)    
+    basename = os.path.basename(infile)
+    root, ext = os.path.splitext(basename)
+    outfile = path + '/' + root + '_enl' + ext  
+    
+    gdal.AllRegister()         
+    inDataset = gdal.Open(infile,GA_ReadOnly)     
+    cols = inDataset.RasterXSize
+    rows = inDataset.RasterYSize    
+    bands = inDataset.RasterCount
+    if dims == None:
+        dims = [0,0,cols,rows]
+    x0,y0,cols,rows = dims        
     print '========================='
     print '     ENL Estimation'
     print '========================='
     print time.asctime()
     print 'infile:  %s'%infile   
-    start = time.time()
     if bands == 9:
         print 'Quad polarimetry'  
-#      C11 (k)
+#      T11 (k)
         band = inDataset.GetRasterBand(1)
         k = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
-#      C12  (a)
+#      T12  (a)
         band = inDataset.GetRasterBand(2)
         a = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
         band = inDataset.GetRasterBand(3)    
         im = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
         a = a + 1j*im
-#      C13  (rho)
+#      T13  (rho)
         band = inDataset.GetRasterBand(4)
         rho = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
         band = inDataset.GetRasterBand(5)
         im = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
         rho = rho + 1j*im     
-#      C22 (xsi)
+#      T22 (xsi)
         band = inDataset.GetRasterBand(6)
         xsi = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()    
-#      C23 (b)        
+#      T23 (b)        
         band = inDataset.GetRasterBand(7)
         b = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
         band = inDataset.GetRasterBand(8)
         im = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()
         b = b + 1j*im     
-#      C33 (zeta)
+#      T33 (zeta)
         band = inDataset.GetRasterBand(9)
         zeta = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel()                
         det = k*xsi*zeta + 2*np.real(a*b*np.conj(rho)) - xsi*(abs(rho)**2) - k*(abs(b)**2) - zeta*(abs(a)**2)
@@ -129,7 +148,7 @@ def main():
     sys.stdout.flush()    
     start = time.time()
     for i in range(3,rows-3):
-        if i%50 == 0:
+        if i%100 == 0:
             print '%i '%i, 
             sys.stdout.flush()
         windex = get_windex(i,cols)  
@@ -155,10 +174,10 @@ def main():
                 logdetavC = np.log(detavC)    
                 arr =  avlogdetC - logdetavC + lu[:,d]    
                 ell = np.where(arr*np.roll(arr,1)<0)[0]
-                if ell != []:
+                if len(ell) >0:
                     enl_ml[i,j] = float(ell[-1])/10.0
             windex += 1
-    driver = gdal.GetDriverByName(fmt)   
+    driver = inDataset.GetDriver()   
     outDataset = driver.Create(outfile,cols,rows,1,GDT_Float32)
     projection = inDataset.GetProjection()
     geotransform = inDataset.GetGeoTransform()
@@ -173,12 +192,13 @@ def main():
     outBand.WriteArray(enl_ml,0,0) 
     outBand.FlushCache() 
     outDataset = None   
-    ya,xa = np.histogram(enl_ml,bins=50)
+    ya,xa = np.histogram(enl_ml,bins=500)
     ya[0] = 0    
-    plt.plot(xa[0:-1],ya)
-    plt.show() 
-    print ''        
-    print 'ENL image written to: %s'%outfile                  
+    if graphics:
+        plt.plot(xa[0:-1],ya)
+        plt.title('Histogram ENL for %s'%infile)
+        plt.show()       
+    print 'ENL image written to: %s'%outfile             
     print 'elapsed time: '+str(time.time()-start)                    
         
 if __name__ == '__main__':
