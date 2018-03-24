@@ -6,7 +6,7 @@
 #    via similarity warping.
 #
 #  Usage:     
-#    import registerms.register
+#    import registerms
 #    registerms.register(reffilename,warpfilename,dims,outfile) 
 #          or        
 #    python registerms.py [OPTIONS] reffilename warpfilename

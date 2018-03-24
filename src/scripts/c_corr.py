@@ -21,11 +21,12 @@ import numpy as np
 from osgeo import gdal
 import scipy.ndimage.interpolation as ndii
 import scipy.stats as stats
+import registerms
 from osgeo.gdalconst import GA_ReadOnly, GDT_Float32     
 
 def write_band(bnd,fname,projection=None,geotransform=None): 
 #  write an image band to disk   
-    driver = gdal.GetDriverByName('ENVI')
+    driver = gdal.GetDriverByName('GTiff')
     rows,cols = bnd.shape
     outDataset = driver.Create(fname,cols,rows,1,GDT_Float32)   
     if projection is not None:
@@ -184,7 +185,10 @@ Outfile name is msfilename_corr with same format as msfilename
 #  co-register cos(gamma) with NIR band to correct for geo-reference error    
     write_band(COSGAMMA,path+'/cosgamma',projection_ms,geotransform_ms_subset)    
 #    subprocess.call(['python','register.py',path+'/nir_band',path+'/cosgamma'])
-    cgDataset = gdal.Open(path+'/cosgamma',GA_ReadOnly)
+
+    cosgamma_reg = registerms.register(path+'/nir_band',path+'/cosgamma',1)
+
+    cgDataset = gdal.Open(cosgamma_reg,GA_ReadOnly)
     band = cgDataset.GetRasterBand(1)
     COSGAMMA = band.ReadAsArray(0,0,cols,rows).ravel()  # co-registered cos(gamma) image
     cgDataset = None
@@ -200,7 +204,7 @@ Outfile name is msfilename_corr with same format as msfilename
             MSk = MS[k,:,:].ravel()
             m,b,r,_,_ = stats.linregress(COSGAMMA[idx], MSk[idx])
             print 'Band: %i Class: %i Pixels: %i Slope: %f Intercept: %f Correlation: %f'%(pos[k],c,len(idx),m,b,r)
-            if r>0.1:
+            if r>0.2:
                 print '---correcting band %i, class %i'%(pos[k],c)
                 MSk[idx] = MSk[idx]*(np.cos(ZENITH) + b/m)/(COSGAMMA[idx] + b/m)
         outBand = outDataset.GetRasterBand(k+1)

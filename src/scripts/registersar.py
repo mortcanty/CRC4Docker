@@ -10,7 +10,7 @@
 #    VNIR image to a SAR image.
 #
 #  Usage:     
-#    import registersar.register
+#    import registersar
 #    register.register[sar|vnir] (reffilename,warpfilename,dims,outfile) 
 #          or        
 #    python registersar.py [OPTIONS] reffilename warpfilename
