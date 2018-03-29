@@ -9,4 +9,5 @@ auxil/eepca.py
 auxil/header.py
 auxil/lookup.py
 auxil/png.py
+auxil/readshp.py
 auxil/supervisedclass.py

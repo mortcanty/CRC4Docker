@@ -19,48 +19,48 @@
 
 
 import numpy as np  
-from mlpy import MaximumLikelihoodC, LibSvm  
+#from mlpy import MaximumLikelihoodC, LibSvm  
 
-epochs = 1000     
+epochs = 100     
 
-class Maxlike(MaximumLikelihoodC):
-     
-    def __init__(self,Gs,ls): 
-        MaximumLikelihoodC.__init__(self)
-        self._K = ls.shape[1] 
-        self._Gs = Gs 
-        self._N = Gs.shape[1]
-        self._ls = ls
-        
-    def train(self):
-        try: 
-            labels = np.argmax(self._ls,axis=1)
-            idx = np.where(labels == 0)[0]
-            ls = np.ones(len(idx),dtype=np.int)
-            Gs = self._Gs[idx,:]
-            for k in range(1,self._K):
-                idx = np.where(labels == k)[0]
-                ls = np.concatenate((ls, \
-                (k+1)*np.ones(len(idx),dtype=np.int)))
-                Gs = np.concatenate((Gs,\
-                               self._Gs[idx,:]),axis=0)         
-            self.learn(Gs,ls)    
-            return True 
-        except Exception as e:
-            print 'Error: %s'%e 
-            return False    
-            
-    def classify(self,Gs):
-        classes = self.pred(Gs)
-        return (classes, None)    
-    
-    def test(self,Gs,ls):
-        m = np.shape(Gs)[0]
-        classes, _ = self.classify(Gs)
-        classes = np.asarray(classes,np.int16)
-        labels = np.argmax(np.transpose(ls),axis=0)+1
-        misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)
+# class Maxlike(MaximumLikelihoodC):
+#       
+#     def __init__(self,Gs,ls): 
+#         MaximumLikelihoodC.__init__(self)
+#         self._K = ls.shape[1] 
+#         self._Gs = Gs 
+#         self._N = Gs.shape[1]
+#         self._ls = ls
+#          
+#     def train(self):
+#         try: 
+#             labels = np.argmax(self._ls,axis=1)
+#             idx = np.where(labels == 0)[0]
+#             ls = np.ones(len(idx),dtype=np.int)
+#             Gs = self._Gs[idx,:]
+#             for k in range(1,self._K):
+#                 idx = np.where(labels == k)[0]
+#                 ls = np.concatenate((ls, \
+#                 (k+1)*np.ones(len(idx),dtype=np.int)))
+#                 Gs = np.concatenate((Gs,\
+#                                self._Gs[idx,:]),axis=0)         
+#             self.learn(Gs,ls)    
+#             return True 
+#         except Exception as e:
+#             print 'Error: %s'%e 
+#             return False    
+#              
+#     def classify(self,Gs):
+#         classes = self.pred(Gs)
+#         return (classes, None)    
+#      
+#     def test(self,Gs,ls):
+#         m = np.shape(Gs)[0]
+#         classes, _ = self.classify(Gs)
+#         classes = np.asarray(classes,np.int16)
+#         labels = np.argmax(np.transpose(ls),axis=0)+1
+#         misscls = np.where(classes-labels)[0]
+#         return len(misscls)/float(m)
         
 
 class Ffn(object):
@@ -286,46 +286,46 @@ class Ffncg(Ffn):
             return None     
 
     
-class Svm(object):   
-    
-    def __init__(self,Gs,ls):
-        self._K = ls.shape[1]
-        self._Gs = Gs
-        self._N = Gs.shape[1]
-        self._ls = ls
-        self._svm = LibSvm('c_svc','rbf',\
-            gamma=1.0/self._N,C=100,probability=True)                
-    
-    def train(self):
-        try:
-            labels = np.argmax(self._ls,axis=1)
-            idx = np.where(labels == 0)[0]
-            ls = np.ones(len(idx),dtype=np.int)
-            Gs = self._Gs[idx,:]
-            for k in range(1,self._K):
-                idx = np.where(labels == k)[0]
-                ls = np.concatenate((ls, \
-                (k+1)*np.ones(len(idx),dtype=np.int)))
-                Gs = np.concatenate((Gs,\
-                               self._Gs[idx,:]),axis=0)         
-            self._svm.learn(Gs,ls)  
-            return True 
-        except Exception as e:
-            print 'Error: %s'%e 
-            return False    
-    
-    def classify(self,Gs):
-        probs = np.transpose(self._svm. \
-                             pred_probability(Gs))       
-        classes = np.argmax(probs,axis=0)+1
-        return (classes, probs) 
-    
-    def test(self,Gs,ls):
-        m = np.shape(Gs)[0]
-        classes, _ = self.classify(Gs)
-        classes = np.asarray(classes,np.int16)
-        labels = np.argmax(np.transpose(ls),axis=0)+1
-        misscls = np.where(classes-labels)[0]
+# class Svm(object):   
+#      
+#     def __init__(self,Gs,ls):
+#         self._K = ls.shape[1]
+#         self._Gs = Gs
+#         self._N = Gs.shape[1]
+#         self._ls = ls
+#         self._svm = LibSvm('c_svc','rbf',\
+#             gamma=1.0/self._N,C=100,probability=True)                
+#      
+#     def train(self):
+#         try:
+#             labels = np.argmax(self._ls,axis=1)
+#             idx = np.where(labels == 0)[0]
+#             ls = np.ones(len(idx),dtype=np.int)
+#             Gs = self._Gs[idx,:]
+#             for k in range(1,self._K):
+#                 idx = np.where(labels == k)[0]
+#                 ls = np.concatenate((ls, \
+#                 (k+1)*np.ones(len(idx),dtype=np.int)))
+#                 Gs = np.concatenate((Gs,\
+#                                self._Gs[idx,:]),axis=0)         
+#             self._svm.learn(Gs,ls)  
+#             return True 
+#         except Exception as e:
+#             print 'Error: %s'%e 
+#             return False    
+#      
+#     def classify(self,Gs):
+#         probs = np.transpose(self._svm. \
+#                              pred_probability(Gs))       
+#         classes = np.argmax(probs,axis=0)+1
+#         return (classes, probs) 
+#      
+#     def test(self,Gs,ls):
+#         m = np.shape(Gs)[0]
+#         classes, _ = self.classify(Gs)
+#         classes = np.asarray(classes,np.int16)
+#         labels = np.argmax(np.transpose(ls),axis=0)+1
+#         misscls = np.where(classes-labels)[0]
         return len(misscls)/float(m)
     
 if __name__ == '__main__':

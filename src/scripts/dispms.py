@@ -62,7 +62,7 @@ def make_image(redband,greenband,blueband,rows,cols,enhance):
             i += 1                           
     return np.reshape(X,(rows,cols,3))/255.
 
-def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,enhance=None,ENHANCE=None,sfn=None,cls=None,CLS=None,alpha=None,colormap=None):
+def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,enhance=None,ENHANCE=None,sfn=None,cls=None,CLS=None,alpha=None,labels=None):
     gdal.AllRegister()
     if filename1 == None:        
         filename1 = raw_input('Enter image filename: ')
@@ -176,7 +176,7 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
                 else:
                     ticks = np.linspace(0.01,1.0,num_classes)
                     ticklabels = map(str,range(1,num_classes+1)) 
-                cmap = cm.get_cmap(colormap)
+                cmap = cm.get_cmap('jet')
                 cmap.set_bad(alpha=0)
                 cmap.set_under('black')    
                 cax = ax.imshow(X1[:,:,0],cmap=cmap,alpha=alpha)  
@@ -189,7 +189,7 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
         else:    
             f, ax = plt.subplots(1,2,figsize=(20,10))
             if cls:
-                cmap = cm.get_cmap(colormap)
+                cmap = cm.get_cmap('jet')
                 cmap.set_under('black') 
                 cax = ax[0].imshow(X1[:,:,0],cmap=cmap)  
                 cax.set_clim(0.01,1.0)                     
@@ -197,7 +197,7 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
                 ax[0].imshow(X1)             
             ax[0].set_title('%s: %s: %s:  %s\n'%(os.path.basename(filename1),enhance1, str(rgb), str(dims)))           
             if CLS:
-                cmap = cm.get_cmap(colormap)
+                cmap = cm.get_cmap('jet')
                 cmap.set_under('black')
                 cax = ax[1].imshow(X2[:,:,0],cmap=cmap)
                 cax.set_clim(0.01,1.0)                         
@@ -212,15 +212,18 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
                 ticks = np.linspace(0.01,1.0,num_classes/2+1)
                 ticklabels = map(str,range(0,num_classes+1,2))  
             else:
-                ticks = np.linspace(0.0,1.0,num_classes)
-                ticklabels = map(str,range(1,num_classes+1))  
-            cmap = cm.get_cmap(colormap)
+                ticks = np.linspace(0.02,0.98,num_classes)
+                if labels is not None:
+                    ticklabels = labels
+                else:                    
+                    ticklabels = map(str,range(0,num_classes))  
+            cmap = cm.get_cmap('jet')
             cmap.set_under('black')
             cax = ax.imshow(X1[:,:,0],cmap=cmap)  
 #            plt.axis('off')
             cax.set_clim(0.0,1.0)                          
-    #        cbar = fig.colorbar(cax,orientation='horizontal',  ticks=ticks, shrink=1.0,pad=0.05)
-    #        cbar.set_ticklabels(ticklabels)
+            cbar = fig.colorbar(cax,orientation='vertical',  ticks=ticks, shrink=0.8,pad=0.05)
+            cbar.set_ticklabels(ticklabels)
         else:
             ax.imshow(X1) 
         ax.set_title('%s: %s: %s: %s\n'%(os.path.basename(filename1),enhance1, str(rgb), str(dims))) 
@@ -247,7 +250,7 @@ Options:
   -d -D    spatial subset lists e.g. -d [0,0,200,200]
   -c -C    display as classification image
   -o alpha overlay left image onto right with opacity alpha
-  -r colormap (default 'jet')
+  -r labels
   -s fn    save the figure to file fn      
   
   -------------------------------------'''%sys.argv[0]
@@ -265,7 +268,7 @@ Options:
     cls = None
     CLS = None
     sfn = None
-    colormap = 'jet'
+    labels = None
     for option, value in options: 
         if option == '-h':
             print usage
@@ -295,9 +298,9 @@ Options:
         elif option == '-C':
             CLS = True  
         elif option == '-r':
-            colormap = value           
+            labels = eval(value)           
                     
-    dispms(filename1,filename2,dims,DIMS,rgb,RGB,enhance,ENHANCE,sfn,cls,CLS,alpha,colormap)
+    dispms(filename1,filename2,dims,DIMS,rgb,RGB,enhance,ENHANCE,sfn,cls,CLS,alpha,labels)
 
 if __name__ == '__main__':
     main()

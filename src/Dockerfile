@@ -5,7 +5,7 @@
 FROM     debian:jessie  
            
 MAINTAINER Mort Canty "mort.canty@gmail.com"
-ENV     REFRESHED_AT 2018-01-14
+ENV     REFRESHED_AT 2018-03-25
 
 RUN apt-get update && apt-get install -y \
     python \
@@ -47,19 +47,9 @@ RUN     cp libprov_means.so /usr/lib/libprov_means.so
 RUN     rm prov_means.c
 
 # scikit-learn
-RUN     pip install -U scikit-learn
+#RUN     pip install -U scikit-learn
 
 EXPOSE 8888
-
-# install auxil
-ENV     REFRESHED_AT 2018-01-14
-COPY    dist/auxil-1.0.tar.gz /home/auxil-1.0.tar.gz
-RUN     tar -xzvf auxil-1.0.tar.gz
-WORKDIR /home/auxil-1.0
-RUN     python setup.py install  
-WORKDIR /home
-RUN     rm -rf auxil-1.0
-RUN     rm auxil-1.0.tar.gz
 
 # setup for earthengine
 RUN     pip install pyasn1 --upgrade
@@ -75,12 +65,24 @@ RUN     pip install tensorflow
 # opencv
 RUN     pip install opencv-python
 
+# install auxil
+COPY    dist/auxil-1.0.tar.gz /home/auxil-1.0.tar.gz
+RUN     tar -xzvf auxil-1.0.tar.gz
+WORKDIR /home/auxil-1.0
+RUN     python setup.py install  
+WORKDIR /home
+RUN     rm -rf auxil-1.0
+RUN     rm auxil-1.0.tar.gz
+
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
 ADD     imagery_initial /home/imagery
 #COPY    Chapter1.ipynb /home/Chapter1.ipynb
 #COPY    Chapter2.ipynb /home/Chapter2.ipynb
 #COPY    Chapter3.ipynb /home/Chapter3.ipynb
+#COPY    Chapter4.ipynb /home/Chapter4.ipynb
+#COPY    Chapter5_1.ipynb /home/Chapter5_1.ipynb
+#COPY    Chapter6.ipynb /home/Chapter6.ipynb
 
 # workalong script for ZFL GEE April 2018
 COPY    zflgee.ipynb /home/zflgee.ipynb

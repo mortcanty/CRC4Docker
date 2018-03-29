@@ -6,32 +6,21 @@
 #  Usage:    
 #     import supervisedclass
 #
-#  Copyright (c) 2012, Mort Canty
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-
 
 import numpy as np  
 from mlpy import MaximumLikelihoodC, LibSvm  
 
-epochs = 1000     
+epochs = 100     
 
 class Maxlike(MaximumLikelihoodC):
-     
+       
     def __init__(self,Gs,ls): 
         MaximumLikelihoodC.__init__(self)
         self._K = ls.shape[1] 
         self._Gs = Gs 
         self._N = Gs.shape[1]
         self._ls = ls
-        
+          
     def train(self):
         try: 
             labels = np.argmax(self._ls,axis=1)
@@ -49,11 +38,11 @@ class Maxlike(MaximumLikelihoodC):
         except Exception as e:
             print 'Error: %s'%e 
             return False    
-            
+              
     def classify(self,Gs):
         classes = self.pred(Gs)
         return (classes, None)    
-    
+      
     def test(self,Gs,ls):
         m = np.shape(Gs)[0]
         classes, _ = self.classify(Gs)
@@ -287,7 +276,7 @@ class Ffncg(Ffn):
 
     
 class Svm(object):   
-    
+      
     def __init__(self,Gs,ls):
         self._K = ls.shape[1]
         self._Gs = Gs
@@ -295,7 +284,7 @@ class Svm(object):
         self._ls = ls
         self._svm = LibSvm('c_svc','rbf',\
             gamma=1.0/self._N,C=100,probability=True)                
-    
+      
     def train(self):
         try:
             labels = np.argmax(self._ls,axis=1)
@@ -313,13 +302,13 @@ class Svm(object):
         except Exception as e:
             print 'Error: %s'%e 
             return False    
-    
+      
     def classify(self,Gs):
         probs = np.transpose(self._svm. \
                              pred_probability(Gs))       
         classes = np.argmax(probs,axis=0)+1
         return (classes, probs) 
-    
+      
     def test(self,Gs,ls):
         m = np.shape(Gs)[0]
         classes, _ = self.classify(Gs)
