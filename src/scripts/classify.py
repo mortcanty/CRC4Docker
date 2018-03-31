@@ -16,15 +16,16 @@ def main():
     usage = '''
 Usage: 
 ---------------------------------------------------------
-python %s  [-p bandPositions] [- a algorithm] [-L number of hidden neurons]   
-[-P generate class probabilities image] filename trainShapefile
+python %s  [-p bandPositions] [- a algorithm] [-L number of hidden neurons (2D array)]   
+[-P generate class probabilities image] [-n suppress graphics]  filename trainShapefile
 
 bandPositions is a list, e.g., -p [1,2,4]  
 
 algorithm  1=MaxLike
            2=NNet(backprop)
            3=NNet(congrad)
-           4=SVM
+           4=Dnn(tensorflow)
+           5=SVM
 
 If the input file is named 
 
@@ -42,6 +43,9 @@ and the test results file is named
 
          path/filebasename_<classifier>.tst
 --------------------------------------------------------''' %sys.argv[0]
+
+    outbuffer = 50
+
     options, args = getopt.getopt(sys.argv[1:],'hnPp:a:L:')
     pos = None
     probs = False   
@@ -72,8 +76,11 @@ and the test results file is named
         algorithm = 'NNet(Backprop)'
     elif trainalg == 3:
         algorithm =  'NNet(Congrad)'
+    elif trainalg == 4:
+        algorithm =  'Dnn(tensorflow)'    
     else:
-        algorithm = 'SVM'              
+        algorithm = 'SVM'    
+    print 'Training with %s'%algorithm          
     infile = args[0]  
     trnfile = args[1]      
     gdal.AllRegister() 
@@ -112,7 +119,7 @@ and the test results file is named
     Xs,Ls,K,classnames = rs.readshp(trnfile,inDataset,pos)       
     m = Ls.shape[0]
     
-#  stretch the pixel vectors to [-1,1] for ffn
+#  stretch the pixel vectors to [-1,1] for ffn, dnn
     maxx = np.max(Xs,0)
     minx = np.min(Xs,0)
     for j in range(len(pos)):
@@ -152,6 +159,8 @@ and the test results file is named
     elif trainalg == 3:
         classifier = sc.Ffncg(Xstrn,Lstrn,L)
     elif trainalg == 4:
+        classifier = sc.Dnn(Xstrn,Lstrn,L) 
+    elif trainalg == 5:
         classifier = sc.Svm(Xstrn,Lstrn)         
 #  train it            
     print 'training on %i pixel vectors...' % np.shape(Xstrn)[0]
@@ -161,6 +170,7 @@ and the test results file is named
     print 'elapsed time %s' %str(time.time()-start) 
     if result is not None:
         if (trainalg in [2,3]) and graphics:
+#          the cost array is returned in result, otherwise True            
             cost = np.log10(result)  
             ymax = np.max(cost)
             ymin = np.min(cost) 
@@ -172,17 +182,17 @@ and the test results file is named
 #      classify the image           
         print 'classifying...'
         start = time.time()
-        tile = np.zeros((cols,N),dtype=np.float32)    
-        for row in range(rows):
+        tile = np.zeros((outbuffer*cols,N),dtype=np.float32)    
+        for row in range(rows/outbuffer):
             for j in range(N):
-                tile[:,j] = rasterBands[j].ReadAsArray(0,row,cols,1)
+                tile[:,j] = rasterBands[j].ReadAsArray(0,row*outbuffer,cols,outbuffer).ravel()
                 tile[:,j] = 2*(tile[:,j]-minx[j])/(maxx[j]-minx[j]) - 1.0               
             cls, Ms = classifier.classify(tile)  
-            outBand.WriteArray(np.reshape(cls,(1,cols)),0,row)
+            outBand.WriteArray(np.reshape(cls,(outbuffer,cols)),0,row*outbuffer)
             if probfile:
                 Ms = np.byte(Ms*255)
                 for k in range(K):
-                    probBands[k].WriteArray(np.reshape(Ms[k,:],(1,cols)),0,row)
+                    probBands[k].WriteArray(np.reshape(Ms[k,:],(outbuffer,cols)),0,row*outbuffer)
         outBand.FlushCache()
         print 'elapsed time %s' %str(time.time()-start)
         outDataset = None
