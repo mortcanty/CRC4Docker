@@ -82,6 +82,7 @@ ADD     imagery_initial /home/imagery
 #COPY    Chapter3.ipynb /home/Chapter3.ipynb
 #COPY    Chapter4.ipynb /home/Chapter4.ipynb
 #COPY    Chapter5_1.ipynb /home/Chapter5_1.ipynb
+#COPY    Chapter5_2.ipynb /home/Chapter5_2.ipynb
 #COPY    Chapter6.ipynb /home/Chapter6.ipynb
 
 # workalong script for ZFL GEE April 2018

@@ -2,13 +2,17 @@
 #******************************************************************************
 #  Name:     supervisedclass.py
 #  Purpose:  object classes for supervised image classification, maximum likelihood, 
-#            back-propagation, scaled conjugate gradient, support vector machine
+#            Gaussian kernel, feed forward nn (back-propagation,scaled conjugate gradient), 
+#            deep learning nn(tensorflow), support vector machine
 #  Usage:    
 #     import supervisedclass
 #
+# (c) Mort Canty 2018
 
 import numpy as np  
 import tensorflow as tf
+import auxil.auxil as auxil
+from scipy.optimize import minimize_scalar
 from mlpy import MaximumLikelihoodC, LibSvm  
 
 tf.logging.set_verbosity('ERROR')
@@ -44,20 +48,59 @@ class Maxlike(MaximumLikelihoodC):
     def classify(self,Gs):
         classes = self.pred(Gs)
         return (classes, None)    
-      
-    def test(self,Gs,ls):
-        m = np.shape(Gs)[0]
-        classes, _ = self.classify(Gs)
-        classes = np.asarray(classes,np.int16)
-        labels = np.argmax(np.transpose(ls),axis=0)+1
-        misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)
+    
+class Gausskernel(object):
+    
+    def __init__(self,Gs,ls): 
+        self._K = ls.shape[1] 
+        self._Gs = Gs 
+        self._N = Gs.shape[1]
+        self._ls = np.argmax(ls,1)
+        self._m = Gs.shape[0]
+        
+    def output(self,sigma,Hs,symm=True):
+        pvs = np.zeros((Hs.shape[0],self._K))
+        kappa = auxil.kernelMatrix(
+            Hs,self._Gs,0.5/(sigma**2),1)[0]
+        if symm:
+            kappa[range(self._m),range(self._m)] = 0
+        for j in range(self._K):
+            kpa = np.copy(kappa)            
+            idx = np.where(self._ls!=j)[0]
+            nj = self._m - idx.size
+            kpa[:,idx] = 0
+            pvs[:,j] = np.sum(kpa,1).ravel()/nj
+        s = np.transpose(np.tile(np.sum(pvs,1),
+                                   (self._K,1)))                        
+        return pvs/s
+    
+    def theta(self,sigma):  
+        pvs = self.output(sigma,self._Gs,True)   
+        labels = np.argmax(pvs,1)
+        idx = np.where(labels != self._ls)[0]
+        n = idx.size
+        error = float(n)/(self._m)
+        print 'sigma: %f  error: %f'%(sigma,error)
+        return error
+    
+    def train(self):        
+        result = minimize_scalar(
+         self._theta,bracket=(0.001,0.1,1.0),tol=0.001)
+        if result.success:
+            self._sigma_min = result.x
+            return True 
+        else:
+            print result.message
+            return None
+        
+    def classify(self,Gs): 
+        pvs = self.output(self._sigma_min,Gs,False)   
+        classes = np.argmax(pvs,1)+1
+        return (classes,pvs)    
         
 
 class Ffn(object):
-    '''Abstract base class for 2-layer, 
-       feed forward neural network'''     
-     
+ 
     def __init__(self,Gs,ls,L): 
 #      setup the network architecture        
         self._L = L[0] 
@@ -72,16 +115,16 @@ class Ffn(object):
         self._ls = np.mat(ls).T
 #      weight matrices
         self._Wh=np.mat(np.random. \
-                        random((self._N+1,self._L)))-0.5
+                      random((self._N+1,self._L)))-0.5
         self._Wo=np.mat(np.random. \
-                        random((self._L+1,self._K)))-0.5      
+                      random((self._L+1,self._K)))-0.5      
                                
     def forwardpass(self,G):
 #      forward pass through the network
         expnt = self._Wh.T*G
         self._n = np.vstack((np.ones(1),1.0/ \
                                   (1+np.exp(-expnt))))
-#      softwmax activation
+#      softmax activation
         I = self._Wo.T*self._n
         A = np.exp(I-max(I))
         return A/np.sum(A)
@@ -123,14 +166,6 @@ class Ffn(object):
             Ms[k,:] = A[k,:]/sm
         return (Ms, n)        
     
-    def test(self,Gs,ls):
-        m = np.shape(Gs)[0]
-        classes, _ = self.classify(Gs)
-        classes = np.asarray(classes,np.int16)
-        labels = np.argmax(ls.T,axis=0) + 1
-        misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)
-                       
     def cost(self):
         Ms, _ = self.vforwardpass(self._Gs)
         return -np.sum(np.multiply(self._ls,np.log(Ms+1e-20)))
@@ -276,7 +311,6 @@ class Ffncg(Ffn):
         except Exception as e:
             print 'Error: %s'%e
             return None     
-
     
 class Svm(object):   
       
@@ -304,7 +338,7 @@ class Svm(object):
             return True 
         except Exception as e:
             print 'Error: %s'%e 
-            return False    
+            return None   
       
     def classify(self,Gs):
         probs = np.transpose(self._svm. \
@@ -312,14 +346,6 @@ class Svm(object):
         classes = np.argmax(probs,axis=0)+1
         return (classes, probs) 
       
-    def test(self,Gs,ls):
-        m = np.shape(Gs)[0]
-        classes, _ = self.classify(Gs)
-        classes = np.asarray(classes,np.int16)
-        labels = np.argmax(np.transpose(ls),axis=0)+1
-        misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)
-    
 class Dnn(object):    
     
     def __init__(self,Gs,ls,L):
@@ -340,7 +366,7 @@ class Dnn(object):
             return True 
         except Exception as e:
             print 'Error: %s'%e 
-            return False    
+            return None    
         
     def classify(self,Gs):
         result = self.dnn_clf.predict(Gs)
@@ -348,17 +374,13 @@ class Dnn(object):
         
 if __name__ == '__main__':
 #  test on random data    
-    Gs = 2*np.random.random((1000,3)) -1.0
-    ls = np.zeros((1000,6))
+    Gs = 2*np.random.random((100,3)) -1.0
+    ls = np.zeros((100,6))
     for l in ls:
         l[np.random.randint(0,6)]=1.0 
-    cl = Dnn(Gs,ls,[4])  
+    cl = Gausskernel(Gs,ls)  
     if cl.train() is not None:
         classes, probs = cl.classify(Gs) 
-    print classes
-    print probs.shape
-    print probs[:,0:10]
-    print np.max(probs)
-    print np.min(probs)
+        print classes
     
     

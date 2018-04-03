@@ -5,7 +5,7 @@
 #  Usage:             
 #    python classify.py
 
-import auxil.supervisedclass as sc
+import supervisedclass as sc
 import auxil.readshp as rs
 import gdal, os, time, sys, getopt
 from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
@@ -22,10 +22,11 @@ python %s  [-p bandPositions] [- a algorithm] [-L number of hidden neurons (2D a
 bandPositions is a list, e.g., -p [1,2,4]  
 
 algorithm  1=MaxLike
-           2=NNet(backprop)
-           3=NNet(congrad)
-           4=Dnn(tensorflow)
-           5=SVM
+           2=Gausskernel
+           3=NNet(backprop)
+           4=NNet(congrad)
+           5=Dnn(tensorflow)
+           6=SVM
 
 If the input file is named 
 
@@ -73,10 +74,12 @@ and the test results file is named
     if trainalg == 1:
         algorithm = 'MaxLike'
     elif trainalg == 2:
-        algorithm = 'NNet(Backprop)'
+        algorithm = 'Gausskernel'    
     elif trainalg == 3:
-        algorithm =  'NNet(Congrad)'
+        algorithm = 'NNet(Backprop)'
     elif trainalg == 4:
+        algorithm =  'NNet(Congrad)'
+    elif trainalg == 5:
         algorithm =  'Dnn(tensorflow)'    
     else:
         algorithm = 'SVM'    
@@ -155,12 +158,14 @@ and the test results file is named
     if   trainalg == 1:
         classifier = sc.Maxlike(Xstrn,Lstrn)
     elif trainalg == 2:
-        classifier = sc.Ffnbp(Xstrn,Lstrn,L)
+        classifier = sc.Gausskernel(Xstrn,Lstrn)
     elif trainalg == 3:
-        classifier = sc.Ffncg(Xstrn,Lstrn,L)
+        classifier = sc.Ffnbp(Xstrn,Lstrn,L)
     elif trainalg == 4:
-        classifier = sc.Dnn(Xstrn,Lstrn,L) 
+        classifier = sc.Ffncg(Xstrn,Lstrn,L)
     elif trainalg == 5:
+        classifier = sc.Dnn(Xstrn,Lstrn,L) 
+    elif trainalg == 6:
         classifier = sc.Svm(Xstrn,Lstrn)         
 #  train it            
     print 'training on %i pixel vectors...' % np.shape(Xstrn)[0]
@@ -169,7 +174,7 @@ and the test results file is named
     result = classifier.train()
     print 'elapsed time %s' %str(time.time()-start) 
     if result is not None:
-        if (trainalg in [2,3]) and graphics:
+        if (trainalg in [3,4]) and graphics:
 #          the cost array is returned in result, otherwise True            
             cost = np.log10(result)  
             ymax = np.max(cost)
@@ -184,6 +189,7 @@ and the test results file is named
         start = time.time()
         tile = np.zeros((outbuffer*cols,N),dtype=np.float32)    
         for row in range(rows/outbuffer):
+            print 'row: %i'%(row*outbuffer)
             for j in range(N):
                 tile[:,j] = rasterBands[j].ReadAsArray(0,row*outbuffer,cols,outbuffer).ravel()
                 tile[:,j] = 2*(tile[:,j]-minx[j])/(maxx[j]-minx[j]) - 1.0               
@@ -192,7 +198,7 @@ and the test results file is named
             if probfile:
                 Ms = np.byte(Ms*255)
                 for k in range(K):
-                    probBands[k].WriteArray(np.reshape(Ms[k,:],(outbuffer,cols)),0,row*outbuffer)
+                    probBands[k].WriteArray(np.reshape(Ms[:,k],(outbuffer,cols)),0,row*outbuffer)
         outBand.FlushCache()
         print 'elapsed time %s' %str(time.time()-start)
         outDataset = None
