@@ -87,6 +87,7 @@ ADD     imagery_initial /home/imagery
 
 # workalong script for ZFL GEE April 2018
 COPY    zflgee.ipynb /home/zflgee.ipynb
+ADD     auxil /home/auxil
 
 # ipython notebook startup script
 ADD     notebook.sh /
