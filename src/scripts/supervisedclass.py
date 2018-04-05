@@ -16,7 +16,7 @@ from scipy.optimize import minimize_scalar
 from mlpy import MaximumLikelihoodC, LibSvm  
 
 tf.logging.set_verbosity('ERROR')
-epochs = 100     
+epochs = 10000     
 
 class Maxlike(MaximumLikelihoodC):
        
@@ -85,7 +85,7 @@ class Gausskernel(object):
     
     def train(self):        
         result = minimize_scalar(
-         self._theta,bracket=(0.001,0.1,1.0),tol=0.001)
+         self.theta,bracket=(0.001,0.1,1.0),tol=0.001)
         if result.success:
             self._sigma_min = result.x
             return True 
@@ -101,7 +101,7 @@ class Gausskernel(object):
 
 class Ffn(object):
  
-    def __init__(self,Gs,ls,L): 
+    def __init__(self,Gs,ls,L,validate): 
 #      setup the network architecture        
         self._L = L[0] 
         self._m,self._N = Gs.shape 
@@ -113,6 +113,16 @@ class Ffn(object):
         self._n = np.mat(np.zeros(self._L+1))         
 #      labels as column vectors
         self._ls = np.mat(ls).T
+        if validate:
+#          split into train and validate sets 
+            self._m = self._m/2          
+            self._Gsv = self._Gs[:,self._m:]
+            self._Gs = self._Gs[:,:self._m]
+            self._lsv = self._ls[:,self._m:]
+            self._ls = self._ls[:,:self._m]
+        else:
+            self._Gsv = self._Gs
+            self._lsv = self._ls        
 #      weight matrices
         self._Wh=np.mat(np.random. \
                       random((self._N+1,self._L)))-0.5
@@ -170,11 +180,15 @@ class Ffn(object):
         Ms, _ = self.vforwardpass(self._Gs)
         return -np.sum(np.multiply(self._ls,np.log(Ms+1e-20)))
     
+    def costv(self):
+        Ms, _ = self.vforwardpass(self._Gsv)
+        return -np.sum(np.multiply(self._lsv,np.log(Ms+1e-20)))
+    
     
 class Ffnbp(Ffn):
     
-    def __init__(self,Gs,ls,L):
-        Ffn.__init__(self,Gs,ls,L)
+    def __init__(self,Gs,ls,L,validate):
+        Ffn.__init__(self,Gs,ls,L,validate)
            
     def train(self):
         eta = 0.01
@@ -184,10 +198,11 @@ class Ffnbp(Ffn):
         inc_h1 = 0.0
         epoch = 0
         cost = []
+        costv = []
         itr = 0        
         try:
             while itr<maxitr:
-#              select example pair at random
+#              select train example pair at random
                 nu = np.random.randint(0,self._m)
                 x = self._Gs[:,nu]
                 ell = self._ls[:,nu]
@@ -207,17 +222,18 @@ class Ffnbp(Ffn):
 #              record cost function
                 if itr % self._m == 0:
                     cost.append(self.cost())
+                    costv.append(self.costv())
                     epoch += 1
                 itr += 1
         except Exception as e:
             print 'Error: %s'%e
             return None
-        return np.array(cost)
+        return (np.array(cost),np.array(costv))
     
 class Ffncg(Ffn):
     
-    def __init__(self,Gs,ls,L):
-        Ffn.__init__(self,Gs,ls,L)
+    def __init__(self,Gs,ls,L,validate):
+        Ffn.__init__(self,Gs,ls,L,validate)
     
     def gradient(self):
 #      gradient of cross entropy wrt synaptic weights          
@@ -264,7 +280,8 @@ class Ffncg(Ffn):
     
     def train(self):
         try: 
-            cost = []             
+            cost = []   
+            costv = []          
             w = np.concatenate((self._Wh.A.ravel(),self._Wo.A.ravel()))
             nw = len(w)
             g = self.gradient()
@@ -293,12 +310,13 @@ class Ffncg(Ffn):
                     self._Wo = np.mat(np.reshape(w[self._L*(self._N+1)::],(self._L+1,self._K)))     
                     lam *= 4.0                  # decrease step size
                     if lam > 1e20:              # if step too small
-                        k = self.epochs         #     give up
+                        k = epochs              #     give up
                     else:                       # else
                         d = -g                  #     restart             
                 else:
                     k += 1
-                    cost.append(E1)             
+                    cost.append(E1)   
+                    costv.append(self.costv())          
                     if Ddelta > 0.75:
                         lam /= 2.0
                     g = self.gradient()
@@ -307,11 +325,40 @@ class Ffncg(Ffn):
                     else:
                         beta = np.sum(self.rop(g).A*d)/dTHd
                     d = beta*d - g
-            return cost 
+            return (cost,costv) 
         except Exception as e:
             print 'Error: %s'%e
             return None     
     
+class Dnn(object):    
+    
+    def __init__(self,Gs,ls,L):
+#      setup the network architecture, Geron, p.164     
+        self._Xs = Gs
+        self._y = np.argmax(ls,1)
+        n_classes = ls.shape[1]
+        feature_cols = tf.contrib.learn. \
+        infer_real_valued_columns_from_input(self._Xs)
+        dnn_clf = tf.contrib.learn.DNNClassifier(
+                hidden_units=L, 
+                n_classes=n_classes, 
+                feature_columns=feature_cols)
+        self.dnn_clf=tf.contrib.learn.SKCompat(dnn_clf)
+        
+    def train(self):
+        try:
+            self.dnn_clf.fit(self._Xs,self._y,
+                             batch_size=50,steps=40000)
+            return True 
+        except Exception as e:
+            print 'Error: %s'%e 
+            return None    
+        
+    def classify(self,Gs):
+        result = self.dnn_clf.predict(Gs)
+        return (result['classes']+1, 
+                np.transpose(result['probabilities']))        
+
 class Svm(object):   
       
     def __init__(self,Gs,ls):
@@ -345,32 +392,7 @@ class Svm(object):
                              pred_probability(Gs))       
         classes = np.argmax(probs,axis=0)+1
         return (classes, probs) 
-      
-class Dnn(object):    
-    
-    def __init__(self,Gs,ls,L):
-#      setup the network architecture, Geron, p.164     
-        self.X_train = Gs
-        self.y_train = np.argmax(ls,1)
-        n_classes = ls.shape[1]
-        feature_cols = tf.contrib.learn.infer_real_valued_columns_from_input(self.X_train)
-        dnn_clf = tf.contrib.learn.DNNClassifier(
-                hidden_units=L, 
-                n_classes=n_classes, 
-                feature_columns=feature_cols)
-        self.dnn_clf = tf.contrib.learn.SKCompat(dnn_clf)
-        
-    def train(self):
-        try:
-            self.dnn_clf.fit(self.X_train,self.y_train,batch_size=50,steps=40000)
-            return True 
-        except Exception as e:
-            print 'Error: %s'%e 
-            return None    
-        
-    def classify(self,Gs):
-        result = self.dnn_clf.predict(Gs)
-        return (result['classes']+1, np.transpose(result['probabilities']))            
+              
         
 if __name__ == '__main__':
 #  test on random data    

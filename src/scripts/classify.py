@@ -17,7 +17,7 @@ def main():
 Usage: 
 ---------------------------------------------------------
 python %s  [-p bandPositions] [- a algorithm] [-L number of hidden neurons (2D array)]   
-[-P generate class probabilities image] [-n suppress graphics]  filename trainShapefile
+[-P generate class probabilities image] [-n suppress graphics] [-v use validation] filename trainShapefile
 
 bandPositions is a list, e.g., -p [1,2,4]  
 
@@ -47,12 +47,13 @@ and the test results file is named
 
     outbuffer = 50
 
-    options, args = getopt.getopt(sys.argv[1:],'hnPp:a:L:')
+    options, args = getopt.getopt(sys.argv[1:],'hnvPp:a:L:')
     pos = None
     probs = False   
     L = 8
     trainalg = 1
     graphics = True
+    validation = False
     for option, value in options:
         if option == '-h':
             print usage
@@ -60,7 +61,9 @@ and the test results file is named
         elif option == '-p':
             pos = eval(value)
         elif option == '-n':
-            graphics = False            
+            graphics = False 
+        elif option == '-v':
+            validation = True                       
         elif option == '-a':
             trainalg = eval(value)
         elif option == '-L':
@@ -119,9 +122,8 @@ and the test results file is named
         probfile = None        
         
 #  get the training data        
-    Xs,Ls,K,classnames = rs.readshp(trnfile,inDataset,pos)       
-    m = Ls.shape[0]
-    
+    Xs,Ls,K,classnames = rs.readshp(trnfile,inDataset,pos) 
+    m = Ls.shape[0]  
 #  stretch the pixel vectors to [-1,1] for ffn, dnn
     maxx = np.max(Xs,0)
     minx = np.min(Xs,0)
@@ -160,28 +162,29 @@ and the test results file is named
     elif trainalg == 2:
         classifier = sc.Gausskernel(Xstrn,Lstrn)
     elif trainalg == 3:
-        classifier = sc.Ffnbp(Xstrn,Lstrn,L)
+        classifier = sc.Ffnbp(Xstrn,Lstrn,L,validation)
     elif trainalg == 4:
-        classifier = sc.Ffncg(Xstrn,Lstrn,L)
+        classifier = sc.Ffncg(Xstrn,Lstrn,L,validation)
     elif trainalg == 5:
         classifier = sc.Dnn(Xstrn,Lstrn,L) 
     elif trainalg == 6:
         classifier = sc.Svm(Xstrn,Lstrn)         
 #  train it            
-    print 'training on %i pixel vectors...' % np.shape(Xstrn)[0]
+    print 'training on %i pixel vectors...' % classifier._Gs.shape[1]
     print 'classes: %s'%str(classnames)
     start = time.time()
     result = classifier.train()
     print 'elapsed time %s' %str(time.time()-start) 
     if result is not None:
         if (trainalg in [3,4]) and graphics:
-#          the cost array is returned in result, otherwise True            
-            cost = np.log10(result)  
+#          the cost arrays are returned in result         
+            cost = np.log(result[0]) 
+            costv = np.log(result[1])
             ymax = np.max(cost)
-            ymin = np.min(cost) 
+            ymin = np.min(cost)-1
             xmax = len(cost)      
-            plt.plot(range(xmax),cost,'k')
-            plt.axis([0,xmax,ymin-1,ymax])
+            plt.plot(range(xmax),costv,'r',range(xmax),cost,'b')
+            plt.axis([0,xmax,ymin,ymax])
             plt.title('Log(Cross entropy)')
             plt.xlabel('Epoch')              
 #      classify the image           
@@ -209,7 +212,7 @@ and the test results file is named
             probDataset = None
             print 'class probabilities written to: %s'%probfile                       
         print 'thematic map written to: %s'%outfile
-        if trainalg in [2,3]:
+        if trainalg in [3,4]:
             plt.show()
         if tstfile:
             with open(tstfile,'w') as f:               
