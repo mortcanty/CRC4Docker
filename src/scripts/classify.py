@@ -5,7 +5,7 @@
 #  Usage:             
 #    python classify.py
 
-import supervisedclass as sc
+import auxil.supervisedclass as sc
 import auxil.readshp as rs
 import gdal, os, time, sys, getopt
 from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
@@ -115,7 +115,7 @@ and the test results file is named
     root, ext = os.path.splitext(basename)
     outfile = '%s/%s_class%s'%(path,root,ext)  
     tstfile = '%s/%s_%s.tst'%(path,root,algorithm)            
-    if (trainalg in (2,3,4)) and probs:
+    if (trainalg in (2,3,4,5,6)) and probs:
 #      class probabilities file
         probfile = '%s/%s_classprobs%s'%(path,root,ext) 
     else:
@@ -170,7 +170,7 @@ and the test results file is named
     elif trainalg == 6:
         classifier = sc.Svm(Xstrn,Lstrn)         
 #  train it            
-    print 'training on %i pixel vectors...' % classifier._Gs.shape[1]
+    print 'training on %i pixel vectors...' % np.max(classifier._Gs.shape)
     print 'classes: %s'%str(classnames)
     start = time.time()
     result = classifier.train()

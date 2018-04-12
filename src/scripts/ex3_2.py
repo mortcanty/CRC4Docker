@@ -19,7 +19,7 @@ def noisecovar(infile):
         D[:,b] = (tmp-(np.roll(tmp,1,axis=0)+\
                  np.roll(tmp,1,axis=1))/2).ravel()       
 #  noise covariance matrix
-    return np.mat(D).T*np.mat(D)/(rows*cols-1)    
+    return np.mat(D).T*np.mat(D)/(2*(rows*cols-1))    
     
 if __name__ == '__main__':
     infile = sys.argv[1]

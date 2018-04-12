@@ -11,12 +11,31 @@
 
 import numpy as np  
 import tensorflow as tf
-import auxil.auxil as auxil
 from scipy.optimize import minimize_scalar
 from mlpy import MaximumLikelihoodC, LibSvm  
 
 tf.logging.set_verbosity('ERROR')
-epochs = 10000     
+epochs = 1000    
+
+def kernelMatrix(X,Y=None,gma=None,kernel=0):
+    if Y is None:
+        Y = X
+    if kernel == 0:
+        X = np.mat(X)
+        Y = np.mat(Y)    
+        return (X*(Y.T),0)
+    else:
+        m = X[:,0].size
+        n = Y[:,0].size
+        onesm = np.mat(np.ones(m))
+        onesn = np.mat(np.ones(n))
+        K = np.mat(np.sum(X*X,axis=1)).T*onesn
+        K = K + onesm.T*np.mat(np.sum(Y*Y,axis=1))
+        K = K - 2*np.mat(X)*np.mat(Y).T
+        if gma is None:
+            scale = np.sum(np.sqrt(abs(K)))/(m**2-m) 
+            gma = 1/(2*scale**2)   
+        return (np.exp(-gma*K),gma) 
 
 class Maxlike(MaximumLikelihoodC):
        
@@ -43,11 +62,19 @@ class Maxlike(MaximumLikelihoodC):
             return True 
         except Exception as e:
             print 'Error: %s'%e 
-            return False    
+            return None    
               
     def classify(self,Gs):
         classes = self.pred(Gs)
-        return (classes, None)    
+        return (classes, None)  
+    
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)
     
 class Gausskernel(object):
     
@@ -60,7 +87,7 @@ class Gausskernel(object):
         
     def output(self,sigma,Hs,symm=True):
         pvs = np.zeros((Hs.shape[0],self._K))
-        kappa = auxil.kernelMatrix(
+        kappa = kernelMatrix(
             Hs,self._Gs,0.5/(sigma**2),1)[0]
         if symm:
             kappa[range(self._m),range(self._m)] = 0
@@ -97,6 +124,14 @@ class Gausskernel(object):
         pvs = self.output(self._sigma_min,Gs,False)   
         classes = np.argmax(pvs,1)+1
         return (classes,pvs)    
+    
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)    
         
 
 class Ffn(object):
@@ -158,7 +193,7 @@ class Ffn(object):
         for k in range(self._K):
             Ms[k,:] = A[k,:]/sm
         classes = np.argmax(Ms,axis=0)+1 
-        return (classes, Ms)   
+        return (classes, np.transpose(Ms))   
     
     def vforwardpass(self,Gs):
 #      vectorized forward pass, Gs are biased column vectors
@@ -183,11 +218,18 @@ class Ffn(object):
     def costv(self):
         Ms, _ = self.vforwardpass(self._Gsv)
         return -np.sum(np.multiply(self._lsv,np.log(Ms+1e-20)))
-    
+
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)    
     
 class Ffnbp(Ffn):
     
-    def __init__(self,Gs,ls,L,validate):
+    def __init__(self,Gs,ls,L,validate=False):
         Ffn.__init__(self,Gs,ls,L,validate)
            
     def train(self):
@@ -232,7 +274,7 @@ class Ffnbp(Ffn):
     
 class Ffncg(Ffn):
     
-    def __init__(self,Gs,ls,L,validate):
+    def __init__(self,Gs,ls,L,validate=False):
         Ffn.__init__(self,Gs,ls,L,validate)
     
     def gradient(self):
@@ -334,11 +376,11 @@ class Dnn(object):
     
     def __init__(self,Gs,ls,L):
 #      setup the network architecture, Geron, p.164     
-        self._Xs = Gs
+        self._Gs = Gs
         self._y = np.argmax(ls,1)
         n_classes = ls.shape[1]
         feature_cols = tf.contrib.learn. \
-        infer_real_valued_columns_from_input(self._Xs)
+        infer_real_valued_columns_from_input(self._Gs)
         dnn_clf = tf.contrib.learn.DNNClassifier(
                 hidden_units=L, 
                 n_classes=n_classes, 
@@ -347,7 +389,7 @@ class Dnn(object):
         
     def train(self):
         try:
-            self.dnn_clf.fit(self._Xs,self._y,
+            self.dnn_clf.fit(self._Gs,self._y,
                              batch_size=50,steps=40000)
             return True 
         except Exception as e:
@@ -357,7 +399,15 @@ class Dnn(object):
     def classify(self,Gs):
         result = self.dnn_clf.predict(Gs)
         return (result['classes']+1, 
-                np.transpose(result['probabilities']))        
+                result['probabilities'])    
+        
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)            
 
 class Svm(object):   
       
@@ -391,8 +441,15 @@ class Svm(object):
         probs = np.transpose(self._svm. \
                              pred_probability(Gs))       
         classes = np.argmax(probs,axis=0)+1
-        return (classes, probs) 
+        return (classes, np.transpose(probs)) 
               
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)              
         
 if __name__ == '__main__':
 #  test on random data    
