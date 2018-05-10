@@ -18,7 +18,7 @@
 import sys, getopt
   
 def register(file0, file1, dims=None, outfile=None): 
-    import auxil.auxil as auxil
+    import auxil.auxil1 as auxil
     import os, time
     import numpy as np
     from osgeo import gdal

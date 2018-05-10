@@ -15,7 +15,8 @@
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
-import auxil.auxil as auxil
+
+import auxil.auxil1 as auxil
 import numpy as np
 from scipy import stats 
 import sys, getopt

@@ -11,7 +11,7 @@
 #          or        
 #    python registerms.py [OPTIONS] reffilename warpfilename
 
-from auxil.auxil import similarity
+from auxil.auxil1 import similarity
 import os, sys, getopt, time
 import numpy as np
 from osgeo import gdal

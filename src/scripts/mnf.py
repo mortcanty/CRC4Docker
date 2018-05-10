@@ -6,7 +6,7 @@
 #    python mnf.py  [options] fileNmae
 
 import numpy as np
-import auxil.auxil as auxil
+import auxil.auxil1 as auxil
 import os, sys, getopt, time
 from osgeo import gdal
 import matplotlib.pyplot as plt

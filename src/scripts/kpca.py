@@ -5,7 +5,7 @@
 #  Usage:             
 #    python kpca.py 
 
-import auxil.auxil as auxil
+import auxil.auxil1 as auxil
 import sys, os, time, getopt
 import numpy as np
 from scipy import linalg

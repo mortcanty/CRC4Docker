@@ -6,7 +6,7 @@
 #  Usage:             
 #    python iMad.py -h
 
-import auxil.auxil as auxil    
+import auxil.auxil1 as auxil    
 import numpy as np    
 import matplotlib.pyplot as plt
 from scipy import linalg, stats 

@@ -5,7 +5,7 @@
 FROM     debian:jessie  
            
 MAINTAINER Mort Canty "mort.canty@gmail.com"
-ENV     REFRESHED_AT 2018-03-25
+ENV     REFRESHED_AT 2018-05-04
 
 RUN apt-get update && apt-get install -y \
     python \
@@ -20,6 +20,11 @@ RUN apt-get update && apt-get install -y \
 # ipython notebook
 RUN     pip install --upgrade pip
 RUN     pip install jupyter
+RUN     pip install ipyleaflet
+RUN     jupyter nbextension enable --py --sys-prefix ipyleaflet
+
+# tensorflow
+RUN     pip install tensorflow
 
 # enable parallel computing
 RUN     pip install ipyparallel
@@ -59,9 +64,6 @@ RUN     pip install --upgrade setuptools && \
         apt-get install -y libssl-dev
 RUN     pip install earthengine-api
 
-# tensorflow
-RUN     pip install tensorflow
-
 # opencv
 RUN     pip install opencv-python
 
@@ -74,20 +76,25 @@ WORKDIR /home
 RUN     rm -rf auxil-1.0
 RUN     rm auxil-1.0.tar.gz
 
+# SPy
+RUN     pip install spectral
+
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
 ADD     imagery_initial /home/imagery
-#COPY    Chapter1.ipynb /home/Chapter1.ipynb
-#COPY    Chapter2.ipynb /home/Chapter2.ipynb
-#COPY    Chapter3.ipynb /home/Chapter3.ipynb
-#COPY    Chapter4.ipynb /home/Chapter4.ipynb
-#COPY    Chapter5_1.ipynb /home/Chapter5_1.ipynb
-#COPY    Chapter5_2.ipynb /home/Chapter5_2.ipynb
-#COPY    Chapter6.ipynb /home/Chapter6.ipynb
+COPY    Chapter1.ipynb /home/Chapter1.ipynb
+COPY    Chapter2.ipynb /home/Chapter2.ipynb
+COPY    Chapter3.ipynb /home/Chapter3.ipynb
+COPY    Chapter4.ipynb /home/Chapter4.ipynb
+COPY    Chapter5_1.ipynb /home/Chapter5_1.ipynb
+COPY    Chapter5_2.ipynb /home/Chapter5_2.ipynb
+COPY    Chapter6.ipynb /home/Chapter6.ipynb
+COPY    Chapter7.ipynb /home/Chapter7.ipynb
+COPY    Chapter9.ipynb /home/Chapter9.ipynb
 
 # workalong script for ZFL GEE April 2018
-COPY    zflgee.ipynb /home/zflgee.ipynb
-ADD     auxil /home/auxil
+#COPY    zflgee.ipynb /home/zflgee.ipynb
+#ADD     auxil /home/auxil
 
 # ipython notebook startup script
 ADD     notebook.sh /

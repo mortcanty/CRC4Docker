@@ -11,13 +11,14 @@ import gdal, os, time, sys, getopt
 from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
 import matplotlib.pyplot as plt
 import numpy as np
- 
+
 def main():    
     usage = '''
 Usage: 
 ---------------------------------------------------------
 python %s  [-p bandPositions] [- a algorithm] [-L number of hidden neurons (2D array)]   
-[-P generate class probabilities image] [-n suppress graphics] [-v use validation] filename trainShapefile
+[-P generate class probabilities image] [-t training fraction] [-n suppress graphics] 
+[-e epochs] [-v use validation] filename trainShapefile
 
 bandPositions is a list, e.g., -p [1,2,4]  
 
@@ -25,8 +26,9 @@ algorithm  1=MaxLike
            2=Gausskernel
            3=NNet(backprop)
            4=NNet(congrad)
-           5=Dnn(tensorflow)
-           6=SVM
+           5=NNet(Kalman)
+           6=Dnn(tensorflow)
+           7=SVM
 
 If the input file is named 
 
@@ -45,15 +47,17 @@ and the test results file is named
          path/filebasename_<classifier>.tst
 --------------------------------------------------------''' %sys.argv[0]
 
-    outbuffer = 50
+    outbuffer = 100
 
-    options, args = getopt.getopt(sys.argv[1:],'hnvPp:a:L:')
+    options, args = getopt.getopt(sys.argv[1:],'hnvPp:t:e:a:L:')
     pos = None
     probs = False   
-    L = 8
+    L = [10]
     trainalg = 1
+    epochs = 100
     graphics = True
     validation = False
+    trainfrac = 0.67
     for option, value in options:
         if option == '-h':
             print usage
@@ -63,7 +67,11 @@ and the test results file is named
         elif option == '-n':
             graphics = False 
         elif option == '-v':
-            validation = True                       
+            validation = True   
+        elif option == '-t':
+            trainfrac = eval(value)  
+        elif option == '-e':
+            epochs = eval(value)                          
         elif option == '-a':
             trainalg = eval(value)
         elif option == '-L':
@@ -83,6 +91,8 @@ and the test results file is named
     elif trainalg == 4:
         algorithm =  'NNet(Congrad)'
     elif trainalg == 5:
+        algorithm =  'NNet(Kalman)'    
+    elif trainalg == 6:
         algorithm =  'Dnn(tensorflow)'    
     else:
         algorithm = 'SVM'    
@@ -96,11 +106,6 @@ and the test results file is named
         rows = inDataset.RasterYSize    
         bands = inDataset.RasterCount
         geotransform = inDataset.GetGeoTransform()
-        if geotransform is not None:
-            gt = list(geotransform) 
-        else:
-            print 'No geotransform available'
-            return       
     else:
         return  
     if pos is None: 
@@ -133,24 +138,25 @@ and the test results file is named
     idx = np.random.permutation(m)
     Xs = Xs[idx,:] 
     Ls = Ls[idx,:]     
-#  train on 2/3 training examples         
-    Xstrn = Xs[0:2*m//3,:]
-    Lstrn = Ls[0:2*m//3,:] 
-    Xstst = Xs[2*m//3:,:]  
-    Lstst = Ls[2*m//3:,:]      
+#  train on trainfrac of training examples, rest for testing          
+    Xstrn = Xs[:int(trainfrac*m),:]
+    Lstrn = Ls[:int(trainfrac*m),:] 
+    Xstst = Xs[int(trainfrac*m):,:]  
+    Lstst = Ls[int(trainfrac*m):,:]  
+        
 #  setup output datasets 
     driver = inDataset.GetDriver() 
     outDataset = driver.Create(outfile,cols,rows,1,GDT_Byte) 
     projection = inDataset.GetProjection()
     if geotransform is not None:
-        outDataset.SetGeoTransform(tuple(gt))
+        outDataset.SetGeoTransform(geotransform)
     if projection is not None:
         outDataset.SetProjection(projection) 
     outBand = outDataset.GetRasterBand(1) 
     if probfile:   
         probDataset = driver.Create(probfile,cols,rows,K,GDT_Byte) 
         if geotransform is not None:
-            probDataset.SetGeoTransform(tuple(gt))
+            probDataset.SetGeoTransform(geotransform)
         if projection is not None:
             probDataset.SetProjection(projection)  
         probBands = [] 
@@ -162,12 +168,14 @@ and the test results file is named
     elif trainalg == 2:
         classifier = sc.Gausskernel(Xstrn,Lstrn)
     elif trainalg == 3:
-        classifier = sc.Ffnbp(Xstrn,Lstrn,L,validation)
+        classifier = sc.Ffnbp(Xstrn,Lstrn,L,epochs,validation)
     elif trainalg == 4:
-        classifier = sc.Ffncg(Xstrn,Lstrn,L,validation)
+        classifier = sc.Ffncg(Xstrn,Lstrn,L,epochs,validation)
     elif trainalg == 5:
-        classifier = sc.Dnn(Xstrn,Lstrn,L) 
+        classifier = sc.Ffnekf(Xstrn,Lstrn,L,epochs,validation)    
     elif trainalg == 6:
+        classifier = sc.Dnn(Xstrn,Lstrn,L,epochs) 
+    elif trainalg == 7:
         classifier = sc.Svm(Xstrn,Lstrn)         
 #  train it            
     print 'training on %i pixel vectors...' % np.max(classifier._Gs.shape)
@@ -176,7 +184,7 @@ and the test results file is named
     result = classifier.train()
     print 'elapsed time %s' %str(time.time()-start) 
     if result is not None:
-        if (trainalg in [3,4]) and graphics:
+        if (trainalg in [3,4,5]) and graphics:
 #          the cost arrays are returned in result         
             cost = np.log(result[0]) 
             costv = np.log(result[1])
@@ -212,7 +220,7 @@ and the test results file is named
             probDataset = None
             print 'class probabilities written to: %s'%probfile                       
         print 'thematic map written to: %s'%outfile
-        if trainalg in [3,4]:
+        if (trainalg in [3,4,5]) and graphics:
             plt.show()
         if tstfile:
             with open(tstfile,'w') as f:               

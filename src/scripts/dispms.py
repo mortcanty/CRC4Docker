@@ -12,7 +12,7 @@ from osgeo.gdalconst import GA_ReadOnly
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
-import auxil.auxil as auxil
+import auxil.auxil1 as auxil
 
 def make_image(redband,greenband,blueband,rows,cols,enhance):
     X = np.ones((rows*cols,3),dtype=np.uint8) 

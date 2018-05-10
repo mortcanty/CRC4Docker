@@ -39,7 +39,7 @@ def main():
     root, ext = os.path.splitext(basename)
     outfile = path+'/'+root+'_pca'+ext  
     outfile1 = path+'/'+root+'_recon'+ext  
-    print '------------PCA ---------------'
+    print '------------ PCA ---------------'
     print time.asctime()     
     print 'Input %s'%infile
     start = time.time()    

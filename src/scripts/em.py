@@ -5,7 +5,7 @@
 #  Usage:             
 #    python em.py 
 
-import auxil.auxil as auxil
+import auxil.auxil1 as auxil
 import auxil.header as header 
 from auxil.auxil import ctable
 import os, sys, time, getopt

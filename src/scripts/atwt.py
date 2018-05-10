@@ -17,7 +17,7 @@
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 
-import auxil.auxil as auxil
+import auxil.auxil1 as auxil
 import os, time, sys, getopt
 import numpy as np
 import scipy.ndimage.interpolation as ndii

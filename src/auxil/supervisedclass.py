@@ -2,40 +2,21 @@
 #******************************************************************************
 #  Name:     supervisedclass.py
 #  Purpose:  object classes for supervised image classification, maximum likelihood, 
-#            Gaussian kernel, feed forward nn (back-propagation,scaled conjugate gradient), 
-#            deep learning nn(tensorflow), support vector machine
+#            Gaussian kernel, feed forward nn (back-propagation,scaled conjugate gradient, 
+#            extended Kalman filter), deep learning nn(tensorflow), support vector machine
 #  Usage:    
 #     import supervisedclass
 #
 # (c) Mort Canty 2018
 
+import auxil1
 import numpy as np  
 import tensorflow as tf
 from scipy.optimize import minimize_scalar
 from mlpy import MaximumLikelihoodC, LibSvm  
 
 tf.logging.set_verbosity('ERROR')
-epochs = 1000    
-
-def kernelMatrix(X,Y=None,gma=None,kernel=0):
-    if Y is None:
-        Y = X
-    if kernel == 0:
-        X = np.mat(X)
-        Y = np.mat(Y)    
-        return (X*(Y.T),0)
-    else:
-        m = X[:,0].size
-        n = Y[:,0].size
-        onesm = np.mat(np.ones(m))
-        onesn = np.mat(np.ones(n))
-        K = np.mat(np.sum(X*X,axis=1)).T*onesn
-        K = K + onesm.T*np.mat(np.sum(Y*Y,axis=1))
-        K = K - 2*np.mat(X)*np.mat(Y).T
-        if gma is None:
-            scale = np.sum(np.sqrt(abs(K)))/(m**2-m) 
-            gma = 1/(2*scale**2)   
-        return (np.exp(-gma*K),gma) 
+   
 
 class Maxlike(MaximumLikelihoodC):
        
@@ -87,7 +68,7 @@ class Gausskernel(object):
         
     def output(self,sigma,Hs,symm=True):
         pvs = np.zeros((Hs.shape[0],self._K))
-        kappa = kernelMatrix(
+        kappa = auxil1.kernelMatrix(
             Hs,self._Gs,0.5/(sigma**2),1)[0]
         if symm:
             kappa[range(self._m),range(self._m)] = 0
@@ -136,11 +117,12 @@ class Gausskernel(object):
 
 class Ffn(object):
  
-    def __init__(self,Gs,ls,L,validate): 
+    def __init__(self,Gs,ls,L,epochs,validate): 
 #      setup the network architecture        
         self._L = L[0] 
         self._m,self._N = Gs.shape 
         self._K = ls.shape[1]
+        self._epochs = epochs
 #      biased input as column vectors         
         Gs = np.mat(Gs).T 
         self._Gs = np.vstack((np.ones(self._m),Gs))      
@@ -229,13 +211,13 @@ class Ffn(object):
     
 class Ffnbp(Ffn):
     
-    def __init__(self,Gs,ls,L,validate=False):
-        Ffn.__init__(self,Gs,ls,L,validate)
+    def __init__(self,Gs,ls,L,epochs=100,validate=False):
+        Ffn.__init__(self,Gs,ls,L,epochs,validate)
            
     def train(self):
         eta = 0.01
         alpha = 0.5
-        maxitr = epochs*self._m 
+        maxitr = self._epochs*self._m 
         inc_o1 = 0.0
         inc_h1 = 0.0
         epoch = 0
@@ -274,8 +256,8 @@ class Ffnbp(Ffn):
     
 class Ffncg(Ffn):
     
-    def __init__(self,Gs,ls,L,validate=False):
-        Ffn.__init__(self,Gs,ls,L,validate)
+    def __init__(self,Gs,ls,L,epochs=100,validate=False):
+        Ffn.__init__(self,Gs,ls,L,epochs,validate)
     
     def gradient(self):
 #      gradient of cross entropy wrt synaptic weights          
@@ -330,7 +312,7 @@ class Ffncg(Ffn):
             d = -g
             k = 0
             lam = 0.001
-            while k < epochs:
+            while k < self._epochs:
                 d2 = np.sum(d*d)                # d^2
                 dTHd = np.sum(self.rop(d).A*d)  # d^T.H.d
                 delta = dTHd + lam*d2
@@ -352,7 +334,7 @@ class Ffncg(Ffn):
                     self._Wo = np.mat(np.reshape(w[self._L*(self._N+1)::],(self._L+1,self._K)))     
                     lam *= 4.0                  # decrease step size
                     if lam > 1e20:              # if step too small
-                        k = epochs              #     give up
+                        k = self._epochs        #     give up
                     else:                       # else
                         d = -g                  #     restart             
                 else:
@@ -371,18 +353,92 @@ class Ffncg(Ffn):
         except Exception as e:
             print 'Error: %s'%e
             return None     
+        
+class Ffnekf(Ffn):
+    
+    def __init__(self,Gs,ls,L,epochs=10,validate=False):
+        Ffn.__init__(self,Gs,ls,L,epochs,validate)
+#      weight covariance matrices
+        self._Sh = np.zeros((self._N+1,self._N+1,self._L)) 
+        for i in range(self._L):
+            self._Sh[:,:,i] = np.identity(self._N+1)*100        
+        self._So = np.zeros((self._L+1,self._L+1,self._K)) 
+        for i in range(self._K):
+            self._So[:,:,i] = np.identity(self._L+1)*100       
+            
+    def train(self):
+        try:
+    #      update matrices for hidden and output weight   
+            dWh = np.zeros((self._N+1,self._L))   
+            dWo = np.zeros((self._L+1,self._K))
+            cost = []
+            costv = []
+            itr = 0
+            epoch = 0  
+            maxitr = self._epochs*self._m
+            while itr < maxitr: 
+    #          select random training pair
+                nu = np.random.randint(0,self._m)
+                x = self._Gs[:,nu]
+                y = self._ls[:,nu]
+    #          forward pass
+                m = self.forwardpass(x)    
+    #          output error
+                e = y - m  
+    #          loop over output neurons
+                for k in range(self._K):
+    #              linearized input
+                    Ao  = m[k,0]*(1-m[k,0])*self._n   
+    #              Kalman gain
+                    So = self._So[:,:,k]  
+                    SA = So*Ao
+                    Ko = SA/((Ao.T*SA)[0] + 1)
+    #              determine delta for this neuron
+                    dWo[:,k] = (Ko*e[k,0]).ravel()
+    #              update its covariance matrix
+                    So -= Ko*Ao.T*So  
+                    self._So[:,:,k] = So  
+    #          update the output weights
+                self._Wo = self._Wo + dWo                           
+    #          backpropagated error
+                beta_o = e.A*m.A*(1-m.A) 
+    #          loop over hidden neurons
+                for j in range(self._L):
+    #              linearized input
+                    Ah = x*(self._n)[j+1,0]*(1-self._n[j+1,0])
+    #              Kalman gain
+                    Sh = self._Sh[:,:,j]  
+                    SA = Sh*Ah  
+                    Kh = SA/((Ah.T*SA)[0] + 1)                        
+    #              determine delta for this neuron
+                    dWh[:,j] = (Kh*(self._Wo[j+1,:]*beta_o)).ravel()
+    #              update its covariance matrix
+                    Sh -= Kh*Ah.T*Sh
+                    self._Sh[:,:,j] = Sh
+    #          update the hidden weights
+                self._Wh = self._Wh + dWh  
+                if itr % self._m == 0:
+                    cost.append(self.cost())
+                    costv.append(self.costv())
+                    epoch += 1 
+                itr += 1
+            return (cost,costv)  
+        except Exception as e:
+            print 'Error: %s'%e 
+            return None                                     
     
 class Dnn(object):    
     
-    def __init__(self,Gs,ls,L):
+    def __init__(self,Gs,ls,L,epochs=1000):
 #      setup the network architecture, Geron, p.164     
         self._Gs = Gs
         self._y = np.argmax(ls,1)
+        self._epochs = epochs
         n_classes = ls.shape[1]
         feature_cols = tf.contrib.learn. \
         infer_real_valued_columns_from_input(self._Gs)
         dnn_clf = tf.contrib.learn.DNNClassifier(
-                hidden_units=L, 
+                hidden_units=L,activation_fn='sigmoid', 
                 n_classes=n_classes, 
                 feature_columns=feature_cols)
         self.dnn_clf=tf.contrib.learn.SKCompat(dnn_clf)
@@ -390,7 +446,7 @@ class Dnn(object):
     def train(self):
         try:
             self.dnn_clf.fit(self._Gs,self._y,
-                             batch_size=50,steps=40000)
+                             steps=self._epochs)
             return True 
         except Exception as e:
             print 'Error: %s'%e 
@@ -449,8 +505,8 @@ class Svm(object):
         classes = np.asarray(classes,np.int16)
         labels = np.argmax(np.transpose(ls),axis=0)+1
         misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)              
-        
+        return len(misscls)/float(m)     
+                
 if __name__ == '__main__':
 #  test on random data    
     Gs = 2*np.random.random((100,3)) -1.0
