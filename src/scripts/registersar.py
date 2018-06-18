@@ -14,6 +14,8 @@
 #    register.register[sar|vnir] (reffilename,warpfilename,dims,outfile) 
 #          or        
 #    python registersar.py [OPTIONS] reffilename warpfilename
+#
+#  Copyright (c) 2018 Mort Canty
 
 import sys, getopt
   

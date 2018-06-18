@@ -10,6 +10,8 @@
 #    registerms.register(reffilename,warpfilename,dims,outfile) 
 #          or        
 #    python registerms.py [OPTIONS] reffilename warpfilename
+#
+#  Copyright (c) 2018 Mort Canty
 
 from auxil.auxil1 import similarity
 import os, sys, getopt, time

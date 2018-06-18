@@ -4,6 +4,8 @@
 #  Purpose:  Principal components analysis
 #  Usage (from command line):             
 #    python pca.py  [options] fileNmae
+#
+#  Copyright (c) 2018 Mort Canty
 
 import numpy as np
 import os, sys, getopt, time

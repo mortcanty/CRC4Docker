@@ -134,8 +134,8 @@ An ENL image will be written to the same directory with '_enl' appended.
         xsi = np.nan_to_num(band.ReadAsArray(x0,y0,cols,rows)).ravel() 
         det = k*xsi - abs(a)**2   
         d = 1   
-    elif bands == 1:
-        print 'Single polarimetry'         
+    elif bands <= 3:
+        print 'Diagonal-only polarimetry'         
 #      C11 (k)
         band = inDataset.GetRasterBand(1)
         k = band.ReadAsArray(x0,y0,cols,rows).ravel() 

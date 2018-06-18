@@ -5,7 +5,7 @@
 FROM     debian:jessie  
            
 MAINTAINER Mort Canty "mort.canty@gmail.com"
-ENV     REFRESHED_AT 2018-05-04
+ENV     REFRESHED_AT 2018-05-17
 
 RUN apt-get update && apt-get install -y \
     python \
@@ -90,11 +90,8 @@ COPY    Chapter5_1.ipynb /home/Chapter5_1.ipynb
 COPY    Chapter5_2.ipynb /home/Chapter5_2.ipynb
 COPY    Chapter6.ipynb /home/Chapter6.ipynb
 COPY    Chapter7.ipynb /home/Chapter7.ipynb
+COPY    Chapter8.ipynb /home/Chapter8.ipynb
 COPY    Chapter9.ipynb /home/Chapter9.ipynb
-
-# workalong script for ZFL GEE April 2018
-#COPY    zflgee.ipynb /home/zflgee.ipynb
-#ADD     auxil /home/auxil
 
 # ipython notebook startup script
 ADD     notebook.sh /

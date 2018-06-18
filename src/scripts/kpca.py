@@ -4,6 +4,8 @@
 #  Purpose:  Perform kernel PCA on multispectral imagery 
 #  Usage:             
 #    python kpca.py 
+#
+#  Copyright (c) 2018 Mort Canty
 
 import auxil.auxil1 as auxil
 import sys, os, time, getopt
@@ -92,14 +94,14 @@ def main():
     else:   
         print 'running k-means on 100 cluster centers...'
         X,_ = kmeans(XX,100,iter=1)
-        m = 100
+        m = X.shape[0]
     print 'centered kernel matrix...'
 # centered kernel matrix    
-    K, gma = auxil.kernelMatrix(X,kernel=kernel)      
+    K, gma = auxil.kernelMatrix(X,nscale=5,kernel=kernel)      
     meanK = np.sum(K)/(m*m)
     rowmeans = np.mat(np.sum(K,axis=0)/m)
     if gma is not None:
-        print 'gamma: '+str(round(gma,6))    
+        print 'gamma: '+str(gma)    
     K = auxil.center(K)    
     print 'diagonalizing...'
 # diagonalize

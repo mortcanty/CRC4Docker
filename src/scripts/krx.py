@@ -14,10 +14,10 @@ from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
  
 def main():      
-    usage = '''Usage: python %s [-h] [-s sample size] [-n nscale] fileName'''%sys.argv[0]
+    usage = '''Usage: python %s [-h] [-s sample size] [-n nscale for Gauss kernel]  fileName'''%sys.argv[0]
     options,args = getopt.getopt(sys.argv[1:],'hs:n:')
     m = 1000
-    nscale = 10.0
+    nscale = 10
     for option, value in options: 
         if option == '-h':
             print usage
@@ -25,13 +25,13 @@ def main():
         elif option == '-s':
             m = eval(value)
         elif option == '-n':
-            nscale = eval(value)       
+            nscale = eval(value)     
     gdal.AllRegister()
     infile = args[0] 
     path = os.path.dirname(infile)
     basename = os.path.basename(infile)
     root, ext = os.path.splitext(basename)
-    outfile = path+'/'+root+'_rx'+ext        
+    outfile = path+'/'+root+'_krx'+ext        
 #  input image                   
     inDataset = gdal.Open(infile,GA_ReadOnly)
     cols = inDataset.RasterXSize
@@ -54,10 +54,34 @@ def main():
     print time.asctime()     
     print 'Input %s'%infile
     start = time.time()  
-    K, gma = auxil.kernelMatrix(G,kernel=1)
+    K,gma=auxil.kernelMatrix(G,nscale=nscale,kernel=1)
     Kc = auxil.center(K)
     print 'GMA: %f'%gma
-#  pseudoinvert centered kernel matrix        
+#  pseudoinvert centered kernel matrix     
+    lam, alpha = np.linalg.eigh(Kc)
+    idx = range(m)[::-1]
+    lam = lam[idx]
+    alpha = alpha[:,idx]
+    tol = max(lam)*m*np.finfo(float).eps
+    r = np.where(lam>tol)[0].shape[0]
+    alpha = alpha[:,:r]
+    lam = lam[:r]
+    Kci = alpha*np.diag(1./lam)*alpha.T
+#  row-by-row anomaly image    
+    res = np.zeros((rows,cols))
+    Ku = np.sum(K,0)/m - np.sum(K)/m**2
+    Ku = np.mat(np.ones(cols)).T*Ku
+    for i in range(rows):
+        if i % 100 == 0:
+            print 'row: %i'%i     
+        GGi = GG[i*cols:(i+1)*cols,:]
+        Kg,_=auxil.kernelMatrix(GGi,G,gma=gma,kernel=1)
+        a = np.sum(Kg,1)
+        a = a*np.mat(np.ones(m))
+        Kg = Kg - a/m
+        Kgu = Kg - Ku
+        d = np.sum(np.multiply(Kgu,Kgu*Kci),1) 
+        res[i,:] = d.ravel()  
 #  output 
     driver = gdal.GetDriverByName('GTiff')    
     outDataset = driver.Create(outfile,cols,rows,1,\
@@ -70,8 +94,6 @@ def main():
     outBand.WriteArray(np.asarray(res,np.float32),0,0) 
     outBand.FlushCache()
     outDataset = None   
-    os.remove('imagery/entmp')
-    os.remove('imagery/entmp.hdr')
     print 'Result written to %s'%outfile
     print 'elapsed time: %s'%str(time.time()-start)
     

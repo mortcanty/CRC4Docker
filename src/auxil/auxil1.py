@@ -127,7 +127,7 @@ class Cpm(object):
 # kernels
 # ---------
 
-def kernelMatrix(X,Y=None,gma=None,kernel=0):
+def kernelMatrix(X,Y=None,gma=None,nscale=10,kernel=0):
     if Y is None:
         Y = X
     if kernel == 0:
@@ -144,7 +144,7 @@ def kernelMatrix(X,Y=None,gma=None,kernel=0):
         K = K - 2*np.mat(X)*np.mat(Y).T
         if gma is None:
             scale = np.sum(np.sqrt(abs(K)))/(m**2-m) 
-            gma = 1/(2*scale**2)   
+            gma = 1/(2*(nscale*scale)**2)   
         return (np.exp(-gma*K),gma)
     
 def center(K):

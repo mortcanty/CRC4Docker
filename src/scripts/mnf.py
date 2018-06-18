@@ -4,6 +4,8 @@
 #  Purpose:  Minimum noise fraction
 #  Usage (from command line):             
 #    python mnf.py  [options] fileNmae
+#
+#  Copyright (c) 2018 Mort Canty
 
 import numpy as np
 import auxil.auxil1 as auxil
@@ -100,7 +102,6 @@ def main():
         outBand = outDataset.GetRasterBand(k+1)
         outBand.WriteArray(mnfs[:,:,k],0,0) 
         outBand.FlushCache() 
-    print 'Eigenvalues: %s'%str(lambdas)
     snrs = 1.0/lambdas-1.0
     print 'Signal to noise ratios: %s'%str(snrs)
     if graphics: 

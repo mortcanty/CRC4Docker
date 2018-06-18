@@ -4,18 +4,19 @@
 #  Purpose:  Perform Gaussian mixture clustering on multispectral imagery 
 #  Usage:             
 #    python em.py 
+#
+#  Copyright (c) 2018, Mort Canty
 
 import auxil.auxil1 as auxil
-import auxil.header as header 
-from auxil.auxil import ctable
 import os, sys, time, getopt
 import numpy as np
 import scipy.ndimage.interpolation as ndi
 import scipy.ndimage.filters as ndf
 from osgeo import gdal
-from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
+from osgeo.gdalconst import GA_ReadOnly,GDT_Byte
 
 def em(G,U,T0,beta,rows,cols,unfrozen=None):
+    '''Gaussian mixture unsupervised classification'''
     K,n = U.shape
     N = G.shape[1]
     if unfrozen is None:
@@ -65,14 +66,15 @@ def em(G,U,T0,beta,rows,cols,unfrozen=None):
                 U[k,unfrozen] = U[k,unfrozen]*Ur               
 #      spatial membership            
         if beta > 0:            
-#          normalize the class probabilities prior to convolving         
+#          normalize class probabilities          
             a = np.sum(U,axis=0)
             idx = np.where(a == 0)[0]
             a[idx] = 1.0
             for k in range(K):
                 U[k,:] = U[k,:]/a                        
             for k in range(K):
-                U_N = 1.0 - ndf.convolve(np.reshape(U[k,:],(rows,cols)),Nb)
+                U_N = 1.0 - ndf.convolve(
+                    np.reshape(U[k,:],(rows,cols)),Nb)
                 V[k,:] = np.exp(-beta*U_N).ravel()                        
 #          combine spectral/spatial
             U[:,unfrozen] = U[:,unfrozen]*V[:,unfrozen] 
@@ -122,7 +124,7 @@ and the class probabilities output file is named
     options, args = getopt.getopt(sys.argv[1:],'hp:d:K:M:m:t:s:P')
     pos = None
     dims = None  
-    K,max_scale,min_scale,T0,beta,probs = (None,None,None,None,None,None)        
+    K,max_scale,min_scale,T0,beta,probs = (6,2,0,0.5,0.5,False)        
     for option, value in options:
         if option == '-h':
             print usage
@@ -136,7 +138,7 @@ and the class probabilities output file is named
         elif option == '-M':
             max_scale = eval(value)
         elif option == '-m':
-            min_scale = eval(value)  
+            min_scale = min(eval(value),3)  
         elif option == '-t':
             T0 = eval(value)
         elif option == '-s':
@@ -147,26 +149,7 @@ and the class probabilities output file is named
         print 'Incorrect number of arguments'
         print usage
         sys.exit(1)       
-    if K is None:
-        K = 6
-    if max_scale is None:
-        max_scale = 2   
-    else:
-        max_scale = min((max_scale,3))  
-    if min_scale is None:
-        min_scale = 0   
-    else:
-        min_scale = min((max_scale,min_scale)) 
-    if T0 is None:
-        T0 = 0.5   
-    if beta is None:
-        beta = 0.5   
-    if probs is None:
-        probs = False
-                                                  
-    gdal.AllRegister()
-    infile = args[0]
-    
+    infile = args[0]   
     gdal.AllRegister() 
     try:                   
         inDataset = gdal.Open(infile,GA_ReadOnly)     
@@ -198,7 +181,8 @@ and the class probabilities output file is named
     print 'infile:   %s'%infile
     print 'clusters: %i'%K
     print 'T0:       %f'%T0
-    print 'beta:     %f'%beta         
+    print 'beta:     %f'%beta  
+    print 'scale:    %i'%max_scale       
 
     start = time.time()                                     
 #  read in image and compress 
@@ -246,11 +230,15 @@ and the class probabilities output file is named
 #      expand the image
         for i in range(bands):
             DWTbands[i].invert()
-        G = np.transpose(np.array([DWTbands[i].get_quadrant(0,float=True).ravel() for i in range(bands)]))  
+        G = [DWTbands[i].get_quadrant(
+              0,float=True).ravel()
+                 for i in range(bands)]
+        G = np.transpose(np.array(G))  
 #      cluster
         unfrozen = np.where(np.max(U,axis=0) < 0.90)
         try:
-            U,Ms,Cs,Ps,pdens = em(G,U,0.0,beta,rows,cols,unfrozen=unfrozen)
+            U,Ms,Cs,Ps,pdens=em(G,U,0.0,beta,rows,cols,
+                                     unfrozen=unfrozen)
         except:
             print 'em failed' 
             return                         
@@ -309,29 +297,6 @@ and the class probabilities output file is named
         outDataset = None    
         print 'class probabilities written to: %s'%probfile                                  
     inDataset = None
-    if (ext == '') and (K<19):
-#  try to make an ENVI classification header file            
-        hdr = header.Header() 
-        headerfile = outfile+'.hdr'
-        f = open(headerfile)
-        line = f.readline()
-        envihdr = ''
-        while line:
-            envihdr += line
-            line = f.readline()
-        f.close()         
-        hdr.read(envihdr)
-        hdr['file type'] ='ENVI Classification'
-        hdr['classes'] = str(K+1)
-        classlookup = '{0'
-        for i in range(1,3*(K+1)):
-            classlookup += ', '+str(str(ctable[i]))
-        classlookup +='}'    
-        hdr['class lookup'] = classlookup
-        hdr['class names'] = ['class %i'%i for i in range(K+1)]
-        f = open(headerfile,'w')
-        f.write(str(hdr))
-        f.close()                 
     print 'classified image written to: '+outfile       
     print 'elapsed time: '+str(time.time()-start)                        
     print '--done------------------------'  

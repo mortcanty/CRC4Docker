@@ -4,6 +4,8 @@
 #  Purpose:  supervised classification of multispectral images with ADABOOST.M1
 #  Usage:             
 #    python adaboost.py
+#
+# Copyright (c) 2018 Mort Canty
 
 import auxil.supervisedclass as sc
 import auxil.readshp as rs

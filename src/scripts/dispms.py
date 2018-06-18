@@ -5,6 +5,8 @@
 #             allowed formats: uint8, uint16,float32,float64 
 #  Usage (from command line):             
 #    python dispms.py  [OPTIONS]
+#
+# Copyright (c) 2018 Mort Canty
 
 import sys, getopt, os
 from osgeo import gdal
@@ -171,17 +173,17 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
             if cls:
                 X1[X1 == 0] = np.nan
                 if num_classes > 30:
-                    ticks = np.linspace(0.01,1.0,num_classes/2+1)
-                    ticklabels = map(str,range(0,num_classes+1,2))  
+                    ticks = np.linspace(0.02,0.98,num_classes/10+1)
+                    ticklabels = map(str,range(0,num_classes+1,10))  
                 else:
-                    ticks = np.linspace(0.01,1.0,num_classes)
+                    ticks = np.linspace(0.02,0.98,num_classes)
                     ticklabels = map(str,range(1,num_classes+1)) 
                 cmap = cm.get_cmap('jet')
                 cmap.set_bad(alpha=0)
                 cmap.set_under('black')    
                 cax = ax.imshow(X1[:,:,0],cmap=cmap,alpha=alpha)  
                 cax.set_clim(0.01,1.0)                       
-                cbar = f.colorbar(cax,orientation='horizontal', ticks=ticks, shrink=1.0,pad=0.1)
+                cbar = f.colorbar(cax,orientation='vertical', ticks=ticks, shrink=0.8,pad=0.05)
                 cbar.set_ticklabels(ticklabels)
             else:
                 ax.imshow(X1,alpha=alpha)
@@ -209,14 +211,14 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
         fig,ax = plt.subplots(figsize=(10,10)) 
         if cls:
             if num_classes > 30:
-                ticks = np.linspace(0.01,1.0,num_classes/2+1)
-                ticklabels = map(str,range(0,num_classes+1,2))  
+                ticks = np.linspace(0.02,0.98,num_classes/10+1)
+                ticklabels = map(str,range(0,num_classes+1,10))  
             else:
                 ticks = np.linspace(0.02,0.98,num_classes)
                 if labels is not None:
                     ticklabels = labels
                 else:                    
-                    ticklabels = map(str,range(0,num_classes))  
+                    ticklabels = map(str,range(1,num_classes+1))  
             cmap = cm.get_cmap('jet')
             cmap.set_under('black')
             cax = ax.imshow(X1[:,:,0],cmap=cmap)  

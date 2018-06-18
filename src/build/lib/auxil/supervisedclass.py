@@ -69,7 +69,7 @@ class Gausskernel(object):
     def output(self,sigma,Hs,symm=True):
         pvs = np.zeros((Hs.shape[0],self._K))
         kappa = auxil1.kernelMatrix(
-            Hs,self._Gs,0.5/(sigma**2),1)[0]
+            Hs,self._Gs,gma=0.5/(sigma**2),nscale=1,kernel=1)[0]
         if symm:
             kappa[range(self._m),range(self._m)] = 0
         for j in range(self._K):
@@ -368,7 +368,7 @@ class Ffnekf(Ffn):
             
     def train(self):
         try:
-    #      update matrices for hidden and output weight matrices   
+    #      update matrices for hidden and output weight   
             dWh = np.zeros((self._N+1,self._L))   
             dWo = np.zeros((self._L+1,self._K))
             cost = []
@@ -427,8 +427,8 @@ class Ffnekf(Ffn):
             print 'Error: %s'%e 
             return None                                     
     
-class Dnn(object):    
-    
+class Dnn_learn(object):    
+    '''High-level Dnn classifier, now depricated '''
     def __init__(self,Gs,ls,L,epochs=1000):
 #      setup the network architecture, Geron, p.164     
         self._Gs = Gs
@@ -437,15 +437,15 @@ class Dnn(object):
         n_classes = ls.shape[1]
         feature_cols = tf.contrib.learn. \
         infer_real_valued_columns_from_input(self._Gs)
-        dnn_clf = tf.contrib.learn.DNNClassifier(
-                hidden_units=L,activation_fn='sigmoid', 
+        dnn = tf.contrib.learn.DNNClassifier(   
+                hidden_units=L, 
                 n_classes=n_classes, 
                 feature_columns=feature_cols)
-        self.dnn_clf=tf.contrib.learn.SKCompat(dnn_clf)
+        self._dnn=tf.contrib.learn.SKCompat(dnn)
         
     def train(self):
         try:
-            self.dnn_clf.fit(self._Gs,self._y,
+            self._dnn.fit(self._Gs,self._y,
                              steps=self._epochs)
             return True 
         except Exception as e:
@@ -453,7 +453,7 @@ class Dnn(object):
             return None    
         
     def classify(self,Gs):
-        result = self.dnn_clf.predict(Gs)
+        result = self._dnn.predict(Gs)
         return (result['classes']+1, 
                 result['probabilities'])    
         
@@ -463,7 +463,61 @@ class Dnn(object):
         classes = np.asarray(classes,np.int16)
         labels = np.argmax(np.transpose(ls),axis=0)+1
         misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)            
+        return len(misscls)/float(m)       
+    
+class Dnn_core(object):    
+    '''High-level core TensorFlow Dnn classifier'''
+    def __init__(self,Gs,ls,L,epochs=100):
+#      setup the network architecture  
+        self._Gs = Gs   
+        n_classes = ls.shape[1]
+        labels = np.argmax(ls,1)
+        N = Gs.shape[1]
+        self._epochs = epochs
+#      feature column structure        
+        feature_cols = [
+         tf.feature_column.numeric_column('x',(1,N))
+                       ]
+#      input function for training                
+        self._train_input_fn = tf.estimator.inputs\
+           .numpy_input_fn(x={'x': Gs},
+                           y=labels,
+                           shuffle=True,
+                           num_epochs = None,
+                           batch_size = Gs.shape[0])
+#      instantiate the classifier                    
+        self._dnn = tf.estimator.DNNClassifier(   
+                hidden_units=L, 
+                n_classes=n_classes,
+                feature_columns=feature_cols)
+                    
+    def train(self):
+        try:
+#          train the classifier            
+            self._dnn.train(
+                input_fn=self._train_input_fn,
+                          steps=self._epochs)
+            return True 
+        except Exception as e:
+            print 'Error: %s'%e 
+            return None    
+        
+    def classify(self,Gs):
+#      input function for prediction    
+        predict_input_fn = tf.estimator.inputs\
+                   .numpy_input_fn(x={'x': Gs},
+                                     y=None,
+                                     shuffle=False,
+                                     num_epochs=1)
+#      classify new data                   
+        result = self._dnn.predict(predict_input_fn)
+        classes = []; probabilities = []
+        for r in result:
+            classes.append(r['class_ids'][0])
+            probabilities.append(r['probabilities'])
+        return (np.array(classes)+1, 
+                np.array(probabilities))
+                    
 
 class Svm(object):   
       
@@ -505,17 +559,17 @@ class Svm(object):
         classes = np.asarray(classes,np.int16)
         labels = np.argmax(np.transpose(ls),axis=0)+1
         misscls = np.where(classes-labels)[0]
-        return len(misscls)/float(m)     
-                
+        return len(misscls)/float(m)              
+    
 if __name__ == '__main__':
 #  test on random data    
-    Gs = 2*np.random.random((100,3)) -1.0
-    ls = np.zeros((100,6))
+    Gs = 2*np.random.random((1000,3)) -1.0
+    ls = np.zeros((1000,4))
     for l in ls:
-        l[np.random.randint(0,6)]=1.0 
+        l[np.random.randint(0,4)]=1.0 
     cl = Gausskernel(Gs,ls)  
-    if cl.train() is not None:
-        classes, probs = cl.classify(Gs) 
+    if cl.train():
+        classes, probabilities = cl.classify(Gs)
         print classes
     
     

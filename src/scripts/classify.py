@@ -4,6 +4,8 @@
 #  Purpose:  supervised classification of multispectral images
 #  Usage:             
 #    python classify.py
+#
+# Copyright (c) 2018 Mort Canty
 
 import auxil.supervisedclass as sc
 import auxil.readshp as rs
@@ -174,7 +176,8 @@ and the test results file is named
     elif trainalg == 5:
         classifier = sc.Ffnekf(Xstrn,Lstrn,L,epochs,validation)    
     elif trainalg == 6:
-        classifier = sc.Dnn(Xstrn,Lstrn,L,epochs) 
+#        classifier = sc.Dnn_learn(Xstrn,Lstrn,L,epochs) 
+        classifier = sc.Dnn_core(Xstrn,Lstrn,L,epochs)
     elif trainalg == 7:
         classifier = sc.Svm(Xstrn,Lstrn)         
 #  train it            
