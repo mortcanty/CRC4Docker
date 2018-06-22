@@ -115,7 +115,7 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
             blueband  = np.nan_to_num(inDataset1.GetRasterBand(b).ReadAsArray(x0,y0,cols,rows))
         else:
             classimg = inDataset1.GetRasterBand(1).ReadAsArray(x0,y0,cols,rows).ravel()         
-            num_classes = np.max(classimg)
+            num_classes = np.max(classimg)-np.min(classimg)
             redband = classimg   
             greenband = classimg
             blueband = classimg
@@ -168,40 +168,39 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
             return
         X2 = make_image(redband,greenband,blueband,rows,cols,enhance2)  
         if alpha is not None:
-            f, ax = plt.subplots(figsize=(10,10)) 
+            fig, ax = plt.subplots(figsize=(10,10)) 
             ax.imshow(X2)
-            if cls:
+            if cls is not None:
+                ticks = np.linspace(0.0,1.0,num_classes+1)
+                if labels is not None:
+                    ticklabels = labels
+                else:                    
+                    ticklabels = map(str,range(0,num_classes+1)) 
                 X1[X1 == 0] = np.nan
-                if num_classes > 30:
-                    ticks = np.linspace(0.02,0.98,num_classes/10+1)
-                    ticklabels = map(str,range(0,num_classes+1,10))  
-                else:
-                    ticks = np.linspace(0.02,0.98,num_classes)
-                    ticklabels = map(str,range(1,num_classes+1)) 
                 cmap = cm.get_cmap('jet')
                 cmap.set_bad(alpha=0)
                 cmap.set_under('black')    
-                cax = ax.imshow(X1[:,:,0],cmap=cmap,alpha=alpha)  
-                cax.set_clim(0.01,1.0)                       
-                cbar = f.colorbar(cax,orientation='vertical', ticks=ticks, shrink=0.8,pad=0.05)
-                cbar.set_ticklabels(ticklabels)
+                cax = ax.imshow(X1[:,:,0]-0.01,cmap=cmap,alpha=alpha)  
+                cax.set_clim(0.0,1.0)  
+                cbar = fig.colorbar(cax,orientation='vertical',  ticks=ticks, shrink=0.8,pad=0.05)
+                cbar.set_ticklabels(ticklabels)                            
             else:
-                ax.imshow(X1,alpha=alpha)
+                ax.imshow(X1-0.01,alpha=alpha)
             ax.set_title('%s: %s: %s: %s\n'%(os.path.basename(filename1),enhance1, str(rgb), str(dims)))            
         else:    
-            f, ax = plt.subplots(1,2,figsize=(20,10))
+            fig, ax = plt.subplots(1,2,figsize=(20,10))
             if cls:
                 cmap = cm.get_cmap('jet')
                 cmap.set_under('black') 
                 cax = ax[0].imshow(X1[:,:,0],cmap=cmap)  
-                cax.set_clim(0.01,1.0)                     
+                cax.set_clim(0.0,1.0)              
             else:
                 ax[0].imshow(X1)             
             ax[0].set_title('%s: %s: %s:  %s\n'%(os.path.basename(filename1),enhance1, str(rgb), str(dims)))           
             if CLS:
                 cmap = cm.get_cmap('jet')
                 cmap.set_under('black')
-                cax = ax[1].imshow(X2[:,:,0],cmap=cmap)
+                cax = ax[1].imshow(X2[:,:,0]-0.01,cmap=cmap)
                 cax.set_clim(0.01,1.0)                         
             else:          
                 ax[1].imshow(X2)             
@@ -209,20 +208,15 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
     else:
 #      one image
         fig,ax = plt.subplots(figsize=(10,10)) 
-        if cls:
-            if num_classes > 30:
-                ticks = np.linspace(0.02,0.98,num_classes/10+1)
-                ticklabels = map(str,range(0,num_classes+1,10))  
-            else:
-                ticks = np.linspace(0.02,0.98,num_classes)
-                if labels is not None:
-                    ticklabels = labels
-                else:                    
-                    ticklabels = map(str,range(1,num_classes+1))  
+        if cls:           
+            ticks = np.linspace(0.0,1.0,num_classes+1)
+            if labels is not None:
+                ticklabels = labels
+            else:                    
+                ticklabels = map(str,range(0,num_classes+1))  
             cmap = cm.get_cmap('jet')
             cmap.set_under('black')
-            cax = ax.imshow(X1[:,:,0],cmap=cmap)  
-#            plt.axis('off')
+            cax = ax.imshow(X1[:,:,0]-0.01,cmap=cmap)  
             cax.set_clim(0.0,1.0)                          
             cbar = fig.colorbar(cax,orientation='vertical',  ticks=ticks, shrink=0.8,pad=0.05)
             cbar.set_ticklabels(ticklabels)
@@ -296,7 +290,7 @@ Options:
         elif option == '-E':
             ENHANCE = eval(value)    
         elif option == '-c':
-            cls = True  
+            cls = True
         elif option == '-C':
             CLS = True  
         elif option == '-r':

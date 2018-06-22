@@ -6,6 +6,7 @@ auxil/congrid.py
 auxil/eeMad.py
 auxil/eeWishart.py
 auxil/eepca.py
+auxil/eesar_seq.py
 auxil/header.py
 auxil/lookup.py
 auxil/png.py
