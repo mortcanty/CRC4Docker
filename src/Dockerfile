@@ -60,6 +60,7 @@ EXPOSE 8888
 RUN     pip install pyasn1 --upgrade
 RUN     pip install --upgrade setuptools && \
         pip install google-api-python-client && \
+        pip install --upgrade oauth2client && \
         pip install pyCrypto && \
         apt-get install -y libssl-dev
 RUN     pip install earthengine-api
