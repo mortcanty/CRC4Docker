@@ -93,15 +93,25 @@ w_significance = widgets.BoundedFloatText(
     description='Significance:',
     disabled=False
 )
+w_opacity = widgets.BoundedFloatText(
+    value=0.5,
+    min=0.0,
+    max=1.0,
+    step=0.1,
+    description='Opacity:',
+    disabled=False
+)
+
+
 
 w_run = widgets.Button(description="Run")
 w_preview = widgets.Button(description="Preview")
 w_export = widgets.Button(description='Export')
 w_dates = widgets.HBox([w_startdate,w_enddate])
-w_orbit = widgets.HBox([w_relativeorbitnumber,w_orbitpass,w_changemap])
+w_orbit = widgets.HBox([w_relativeorbitnumber,w_orbitpass,w_changemap,w_opacity])
 w_exp = widgets.HBox([w_export,w_exportname])
 w_signif = widgets.HBox([w_significance,w_median])
-w_rse = widgets.HBox([w_run,w_preview,w_exp])
+w_rse = widgets.HBox([w_run,w_exp,w_preview])
 
 box = widgets.VBox([w_dates,w_orbit,w_signif,w_rse])
 
@@ -136,10 +146,8 @@ def on_run_button_clicked(b):
         timestamplist1 = [timestamplist[i] + '_' + str(i+1) for i in range(len(timestamplist))]    
         relativeorbitnumbers = str(map(int,ee.List(collection.aggregate_array('relativeOrbitNumber_start')).getInfo()))
         print 'Images found: %i'%count
-        print 'Acquistion dates'
-        print timestamplist
-        print 'Relative orbit numbers'
-        print relativeorbitnumbers
+        print 'Acquisition dates: '+timestamplist[0]+'...'+timestamplist[-1]
+        print 'Relative orbit numbers: '+relativeorbitnumbers[0:40]+'...'
         pcollection = collection.map(get_vvvh)
         pList = pcollection.toList(100)   
         first = ee.Dictionary({'imlist':ee.List([]),'poly':poly}) 
@@ -157,6 +165,7 @@ def on_preview_button_clicked(b):
     cmap = ee.Image(result.get('cmap')).byte()
     fmap = ee.Image(result.get('fmap')).byte() 
     bmap = ee.Image(result.get('bmap')).byte() 
+    opacity = w_opacity.value
     if w_changemap.value=='First':
         mp = smap 
         mx = count
@@ -168,7 +177,7 @@ def on_preview_button_clicked(b):
         mx = count/2
     if len(m.layers)>1:
         m.remove_layer(m.layers[1])
-    m.add_layer(TileLayer(url=GetTileLayerUrl( mp.visualize(min=0, max=mx, palette=jet,opacity = 0.5))))
+    m.add_layer(TileLayer(url=GetTileLayerUrl( mp.visualize(min=0, max=mx, palette=jet,opacity = opacity))))
     
 w_preview.on_click(on_preview_button_clicked)   
 
@@ -177,19 +186,24 @@ def on_export_button_clicked(b):
     collection1 = ee.ImageCollection('COPERNICUS/S2') \
                     .filterBounds(poly) \
                     .filterDate(ee.Date(w_startdate.value),ee.Date(w_enddate.value)) \
-                    .sort('CLOUDY_PIXEL_PERCENTAGE',True)
+                    .sort('CLOUDY_PIXEL_PERCENTAGE',True) \
+                    .filterMetadata('CLOUDY_PIXEL_PERCENTAGE','less_than',1.0) 
     count1 = collection1.size().getInfo()
     if count1>0:
-    #  use sentinel-2 as background                        
+#      use sentinel-2 as background                        
         background = ee.Image(collection1.first()) \
                                .clip(poly) \
                                .select('B8') \
-                               .divide(10000)    
+                               .divide(5000)    
     else:
+#      use temporal averaged sentinel-1        
         background = collection.mean() \
                                .select(0) \
-                               .multiply(ee.Image.constant(math.log(10.0)/10.0)).exp()                                                
-    background = background.where(background.gte(1),1).clip(poly)     
+                               .clip(poly) \
+                               .divide(20) \
+                               .add(1)                                                
+    background = background.where(background.gte(1),1) \
+                           .where(background.lte(0),0)   
     cmaps = ee.Image.cat(cmap,smap,fmap,bmap,background).rename(['cmap','smap','fmap']+timestamplist1[1:]+['background'])                
     assexport = ee.batch.Export.image.toAsset(cmaps,
                                 description='assetExportTask', 

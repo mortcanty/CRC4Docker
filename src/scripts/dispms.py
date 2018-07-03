@@ -192,7 +192,7 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
             if cls:
                 cmap = cm.get_cmap('jet')
                 cmap.set_under('black') 
-                cax = ax[0].imshow(X1[:,:,0],cmap=cmap)  
+                cax = ax[0].imshow(X1[:,:,0]-0.01,cmap=cmap)  
                 cax.set_clim(0.0,1.0)              
             else:
                 ax[0].imshow(X1)             
@@ -221,8 +221,11 @@ def dispms(filename1=None,filename2=None,dims=None,DIMS=None,rgb=None,RGB=None,e
             cbar = fig.colorbar(cax,orientation='vertical',  ticks=ticks, shrink=0.8,pad=0.05)
             cbar.set_ticklabels(ticklabels)
         else:
-            ax.imshow(X1) 
-        ax.set_title('%s: %s: %s: %s\n'%(os.path.basename(filename1),enhance1, str(rgb), str(dims))) 
+            ax.imshow(X1)
+        fn = os.path.basename(filename1) 
+        if len(fn)>40:
+            fn = fn[:37]+' ... '
+        ax.set_title('%s: %s: %s: %s\n'%(fn,enhance1, str(rgb), str(dims))) 
     if sfn is not None:
         plt.savefig(sfn,bbox_inches='tight')       
     plt.show()                 

@@ -208,7 +208,8 @@ def change_maps(pvarray,significance):
     for ell in range(k-1):
         for j in range(ell,k-1):
             pv = pvarray[ell,j,:]
-            idx = np.where( (pv <= significance) & (cmap == ell) )
+            idx = np.where((pv<=significance)\
+                          &(cmap==ell))
             fmap[idx] += 1 
             cmap[idx] = j+1 
             bmap[idx,j] = 255 
@@ -370,7 +371,7 @@ enl:
     outBand = outDataset.GetRasterBand(1)
     outBand.WriteArray(cmap,0,0) 
     outBand.FlushCache() 
-    print 'most recent change map written to: %s'%outfn1  
+    print 'last change map written to: %s'%outfn1  
     outfn2=outfn.replace(name,name+'_fmap')
     outDataset = driver.Create(outfn2,cols,rows,1,GDT_Byte)
     if geotransform is not None:
