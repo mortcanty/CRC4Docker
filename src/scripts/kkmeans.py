@@ -14,8 +14,26 @@ import auxil.auxil1 as auxil
 from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
 
 def main():
-    usage = '''Usage: python %s [-h] [-k clusters] [-n nscale for Gauss kernel] [-m samples size] [-d dims] [-p pos] fileName\n
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400]'''%sys.argv[0]    
+ 
+    usage = '''            
+Usage: 
+--------------------------------------
+
+Perform kernel K-means clustering on multispectral imagery
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -k  <int>     number of clusters (default 6)
+  -m  <int>     number of samples (default 1000)
+  -n  <int>     nscale for Gauss kernel (default 1)
+
+  -------------------------------------'''%sys.argv[0]   
+  
     options,args = getopt.getopt(sys.argv[1:],'hk:n:m:d:p:')
     dims = None
     pos = None

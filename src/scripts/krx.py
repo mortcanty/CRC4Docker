@@ -14,7 +14,27 @@ from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
  
 def main():      
-    usage = '''Usage: python %s [-h] [-s sample size] [-n nscale for Gauss kernel]  fileName'''%sys.argv[0]
+    usage = '''
+Usage:
+------------------------------------------------
+
+Kernel RX anomaly detection for multi- and hyperspectral images
+
+python %s [OPTIONS]  filename
+
+Options:
+  
+  -h         this help
+   
+  -s  <int>   sample size for kernel matrix (default 1000)
+  
+  -n  <int>   nscale parameter for Gauss kernel (default 10)
+
+-------------------------------------------------'''%sys.argv[0]      
+    
+    
+    
+    
     options,args = getopt.getopt(sys.argv[1:],'hs:n:')
     m = 1000
     nscale = 10

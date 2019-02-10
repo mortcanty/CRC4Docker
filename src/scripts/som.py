@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 #Name:  som.py
-#  Purpose:  Kohonen self-organizing map for multispectral image visualization
-#            Implemented with the TensorFlow API
+#  Purpose:  3D Kohonen self-organizing map for multispectral image RGB visualization
 #  Usage (from command line):             
 #    python som.py [options] fileName
-#
-# Modification of code provided by Sachin Joglekar 
-# https://codesachin.wordpress.com/2015/11/28/self-organizing-maps-with-googles-tensorflow/
-# Mort Canty 2018
+# Mort Canty (c) 2018
 
 import numpy as np
 import os, sys, getopt, time
@@ -57,8 +53,25 @@ def cluster(G,c,W):
     return som
             
 def main():
-    usage = '''Usage: python %s [-h] [-c som cube dimension] [-s sample size] [-d dims] [-p pos] fileName\n
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400]'''%sys.argv[0]    
+
+    usage = '''
+Usage: 
+--------------------------------------
+
+3D Kohonen self-organizing map for multispectral image RGB visualization
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -s  <int>     sample size (default 10000)
+  -c  <int>     cube side length (default 5)
+
+  -------------------------------------'''%sys.argv[0]   
+            
     options,args = getopt.getopt(sys.argv[1:],'hc:s:d:p:')
     dims = None
     pos = None

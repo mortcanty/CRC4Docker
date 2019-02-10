@@ -146,7 +146,7 @@ def mmse_filter(infile, m, dims=None):
     projection = inDataset.GetProjection()        
     if projection is not None:
         outDataset.SetProjection(projection) 
-    print 'Filtering covariance matrix elememnts'  
+    print 'Filtering covariance matrix elements'  
     for k in range(1,bands+1):
         print 'band: %i'%(k)
         band = inDataset.GetRasterBand(k)

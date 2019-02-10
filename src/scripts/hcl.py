@@ -20,8 +20,26 @@ def best_merge(D):
     return [np.mod(label,n),label/n]
 
 def main(): 
-    usage = '''Usage: python %s [-h] [-s samples] [-k clusters] [-d dims] [-p band positions] fileName\n
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400]'''%sys.argv[0]    
+
+    usage = '''            
+Usage: 
+--------------------------------------
+
+Perform agglomerative hierarchical clustering
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -k  <int>     number of clusters (default 8)
+  -s  <int>     number of samples (default 1000)
+
+  -------------------------------------'''%sys.argv[0]
+            
+            
     options,args = getopt.getopt(sys.argv[1:],'hs:k:d:p:')
     dims = None
     pos = None
@@ -164,7 +182,7 @@ def main():
         p = plt.gca()
         p.set_title('Merge cost')
         p.set_xlabel('Custers') 
-        p.set_ylim((1,ymax))      
+        p.set_ylim((1,ymax))    
         plt.show()    
         print 'result written to: '+outfile    
         print 'elapsed time: '+str(time.time()-start)

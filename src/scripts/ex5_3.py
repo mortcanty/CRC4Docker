@@ -28,7 +28,7 @@ def main():
     for i in range(n):
         A[2*i,:] =   [pts2[i,0],-pts2[i,1],1,0]
         A[2*i+1,:] = [pts2[i,1], pts2[i,0],0,1]  
-    result = np.linalg.lstsq(A,y)    
+    result = np.linalg.lstsq(A,y,rcond=-1)    
     a,b,x0,y0 = result[0]
     RMS = np.sqrt(result[1]/n)
     print 'RST transformation:'

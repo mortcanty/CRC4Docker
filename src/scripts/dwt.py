@@ -16,18 +16,24 @@ from osgeo.gdalconst import GA_ReadOnly, GDT_Float32
 
 def main():
     usage = '''
-Usage:
------------------------------------------------------------------------
-python %s [-d spatialDimensions] [-p bandPositions [-r resolution ratio]
-[-b registration band]  msfilename panfilename 
------------------------------------------------------------------------
-bandPositions and spatialDimensions are lists, 
-e.g., -p [1,2,3] -d [0,0,400,400]
+Usage: 
+--------------------------------------
 
-Outfile name is msfilename_pan_dwt with same format as msfilename    
+Panchromatic sharpening with the a discrete transform
 
-Note: PAN image must completely overlap MS image subset chosen  
------------------------------------------------------''' %sys.argv[0]
+python %s [OPTIONS] msfilename panfilename 
+
+Options:
+  -h            this help
+  -p  <list>    RGB band positions to be sharpened (default all)
+                               e.g. -p [1,2,3]
+  -d  <list>    spatial subset [x,y,width,height] of ms image
+                               e.g. -d [0,0,200,200]
+  -r  <int>     resolution ratio ms:pan (default 4)
+  -b  <int>     ms band for co-registration 
+  
+  -------------------------------------'''%sys.argv[0]
+  
     options, args = getopt.getopt(sys.argv[1:],'hd:p:r:b:')
     ratio = 4
     dims1 = None
@@ -105,7 +111,7 @@ Note: PAN image must completely overlap MS image subset chosen
 #  if integer assume 11bit quantization otherwise must be byte   
     if MS.dtype == np.int16:
         fact = 8.0
-        MS = auxil.byteStretch(MS,(0,2**11)) 
+        MS = auxil.bytestr(MS,(0,2**11)) 
     else:
         fact = 1.0
 #  read in corresponding spatial subset of PAN image    
@@ -125,7 +131,7 @@ Note: PAN image must completely overlap MS image subset chosen
     PAN = band.ReadAsArray(x20,y20,cols2,rows2)        
 #  if integer assume 11-bit quantization, otherwise must be byte    
     if PAN.dtype == np.int16:
-        PAN = auxil.byteStretch(PAN,(0,2**11))                                   
+        PAN = auxil.bytestr(PAN,(0,2**11))                                   
 #  compress PAN to resolution of MS image  
     panDWT = auxil.DWTArray(PAN,cols2,rows2)          
     r = ratio

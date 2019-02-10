@@ -5,7 +5,7 @@
 #    Display a scatterplot of two ms bands      via similarity warping.
 #
 #  Usage:        
-#    python scatterplot.py [OPTIONS] filename1 filename2 band1 band2
+#    python scatterplot.py [OPTIONS] filename1 [filename2] band1 band2
 #
 #  Copyright (c) 2018 Mort Canty
 
@@ -21,16 +21,16 @@ def main():
     Usage:
 ------------------------------------------------
 
-python %s [OPTIONS] filename1 filename2 band1 band2
-    
 Display a scatterplot   
-    
+
+python %s [OPTIONS] filename1 [filename2] band1 band2
+      
 Options:
 
-   -h      this help
-   -d dims, spatial subset
-   -n samples (default 10000)
-   -s filename, save as eps to file ''' %sys.argv[0]
+   -h          this help
+   -d <list>   spatial subset
+   -n <int>    samples (default 10000)
+   -s <string> save in eps format ''' %sys.argv[0]
    
     options, args = getopt.getopt(sys.argv[1:],'hd:s:')  
     dims = None
@@ -45,15 +45,21 @@ Options:
         elif option == '-n':
             samples = eval(value) 
         elif option == '-s':
-            sfn = value           
-    if len(args) != 4:
+            sfn = value            
+    if len(args)==4:     
+        fn1 = args[0] 
+        fn2 = args[1]  
+        b1 = eval(args[2])
+        b2 = eval(args[3])
+    elif len(args)==3:
+        fn1 = args[0] 
+        fn2 = args[0]  
+        b1 = eval(args[1])
+        b2 = eval(args[2])
+    else:
         print 'Incorrect number of arguments'
         print usage
-        sys.exit(1)      
-    fn1 = args[0] 
-    fn2 = args[1]  
-    b1 = eval(args[2])
-    b2 = eval(args[3])
+        sys.exit(1)             
     gdal.AllRegister()
     inDataset = gdal.Open(fn1,GA_ReadOnly)  
     cols = inDataset.RasterXSize
@@ -78,7 +84,7 @@ Options:
     idx = np.random.randint(0,rows*cols,samples)
     plt.plot(g1[idx],g2[idx],'.')
     if sfn is not None:
-        plt.savefig(sfn,bbox_inches='tight')
+        plt.savefig(sfn,bbox_inches='tight')  
     plt.show()
    
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #******************************************************************************
 #  Name:     c_corr.py
-#  Purpose:  c-coorection algorithm for solar illunination in rough terrain
+#  Purpose:  c-correction algorithm for solar illumination in rough terrain
 #  Usage:             
 #    python c_corr.py [options] msfilename demfilename
 #
@@ -12,7 +12,7 @@ import numpy as np
 from osgeo import gdal
 import scipy.ndimage.interpolation as ndii
 import scipy.stats as stats
-import registerms
+import auxil.registerms as registerms
 from osgeo.gdalconst import GA_ReadOnly, GDT_Float32     
 
 def write_band(bnd,fname,projection=None,geotransform=None): 
@@ -30,17 +30,26 @@ def write_band(bnd,fname,projection=None,geotransform=None):
     outDataset = None         
 
 def main():
+
     usage = '''
-Usage:
------------------------------------------------------------------------
-python %s [-d spatialDimensions] [-p bandPositions]  [-c classfilename]
-           solarAzimuth(deg) solarElevation(deg) msfilename demfilename 
+Usage: 
+--------------------------------------
 
-bandPositions and spatialDimensions are lists, 
-e.g., -p [1,2,3] -d [0,0,400,400]
+C-correction algorithm for solar illumination in rough terrain
 
-Outfile name is msfilename_corr with same format as msfilename      
------------------------------------------------------''' %sys.argv[0]
+python %s [OPTIONS] solarAzimuth solarElevation msfilename demfilename 
+
+Options:
+  -h            this help
+  -p  <list>    RGB band positions to be sharpened (default all)
+                               e.g. -p [1,2,3]
+  -d  <list>    spatial subset [x,y,width,height] of ms image
+                               e.g. -d [0,0,200,200]
+  -c  <string>  classfilename (default None)
+  
+  -------------------------------------'''%sys.argv[0]
+
+
     options, args = getopt.getopt(sys.argv[1:],'hd:p:c:')
     dims = None
     pos = None  
@@ -148,7 +157,7 @@ Outfile name is msfilename_corr with same format as msfilename
         CLASS = band.ReadAsArray(0,0,cols,rows).ravel()
         classDataset = None
     else:
-        CLASS = np.zeros((rows*cols), dtype=np.uint8) + 1     
+        CLASS = np.ones((rows*cols), dtype=np.uint8)    
     num_classes = np.max(CLASS)          
 #  write dem subset to disk and calculate slope and aspect maps      
     demtmpfn = path+'/dem_temp'     
@@ -175,10 +184,7 @@ Outfile name is msfilename_corr with same format as msfilename
     COSGAMMA = np.cos(SLOPE)*np.cos(ZENITH) + np.sin(SLOPE)*np.sin(ZENITH)*np.cos(AZIMUTH-ASPECT)
 #  co-register cos(gamma) with NIR band to correct for geo-reference error    
     write_band(COSGAMMA,path+'/cosgamma',projection_ms,geotransform_ms_subset)    
-#    subprocess.call(['python','register.py',path+'/nir_band',path+'/cosgamma'])
-
     cosgamma_reg = registerms.register(path+'/nir_band',path+'/cosgamma',1)
-
     cgDataset = gdal.Open(cosgamma_reg,GA_ReadOnly)
     band = cgDataset.GetRasterBand(1)
     COSGAMMA = band.ReadAsArray(0,0,cols,rows).ravel()  # co-registered cos(gamma) image

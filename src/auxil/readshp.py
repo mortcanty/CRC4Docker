@@ -4,9 +4,9 @@
 #     Read ENVI ROI shapefiles and return training/test data and class labels
 #  Usage:    
 #     import readshp
-#     Xs, Ls, numclasses  = readshp.readshp(<train shapefile>, <inDataset for image>, <band positions)> )
+#     Gs, ls, numclasses  = readshp.readshp(<train shapefile>, <inDataset for image>, <band positions)> )
 
-import ogr, osr
+from osgeo import ogr, osr
 from shapely.geometry import asPolygon, MultiPoint
 import shapely.wkt  
 import numpy as np
@@ -40,8 +40,8 @@ def readshp(trnfile,inDataset,pos):
     trnLayer.ResetReading()    
     K += 1          
 #  loop through the polygons    
-    Xs = []   # train observations (data matrix)
-    Ls = []   # class labels (lists)
+    Gs = []   # train observations (data matrix)
+    ls = []   # class labels (lists)
     classnames = []
     classids = set()
     print 'reading training data...'
@@ -86,15 +86,15 @@ def readshp(trnfile,inDataset,pos):
             k += 1
 #      get the training vectors
         for (x,y) in intersection:         
-            Xs.append(cube[y-miny,x-minx,:])
-            Ls.append(l)   
+            Gs.append(cube[y-miny,x-minx,:])
+            ls.append(l)   
         polygon = None
         polygon1 = None            
         feature.Destroy()  
     trnDatasource.Destroy()       
-    Xs = np.array(Xs) 
-    Ls = np.array(Ls)   
-    return (Xs,Ls,K,classnames)         
+    Gs = np.array(Gs) 
+    ls = np.array(ls)   
+    return (Gs,ls,K,classnames)         
     
 if __name__ == '__main__':
     pass

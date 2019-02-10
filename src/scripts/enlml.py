@@ -5,12 +5,9 @@
 #    Estimation of ENL for polSAR covariance images
 #    using ML method with full covariance matrix (quad, dual or single)
 #    Anfinsen et al. (2009) IEEE TGARS 47(11), 3795-3809
-#    Takes input from covariance matrix format images generated
-#    from polsaringest.py
+#    
 #  Usage:             
 #    python enl.py [OPTIONS] filename
-#
-# MIT License
 # 
 # Copyright (c) 2018 Mort Canty
 

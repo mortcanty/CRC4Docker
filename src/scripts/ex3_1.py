@@ -6,7 +6,7 @@ from osgeo.gdalconst import GA_ReadOnly
 
 def main(): 
     gdal.AllRegister()
-    infile = 'imagery/20010626'
+    infile = 'imagery/LE7_20010626'
     if infile:                  
         inDataset = gdal.Open(infile,GA_ReadOnly)     
         cols = inDataset.RasterXSize

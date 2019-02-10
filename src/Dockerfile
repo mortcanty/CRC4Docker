@@ -5,7 +5,7 @@
 FROM     debian:jessie  
            
 MAINTAINER Mort Canty "mort.canty@gmail.com"
-ENV     REFRESHED_AT 2018-05-17
+ENV     REFRESHED_AT 2018-12-25
 
 RUN apt-get update && apt-get install -y \
     python \
@@ -15,31 +15,29 @@ RUN apt-get update && apt-get install -y \
     pandoc \
     python-dev \
     python-pygments \
-    python-pip  
+    python-pip \
+    libssl-dev \
+    git 
 
-# ipython notebook
 RUN     pip install --upgrade pip
-RUN     pip install jupyter
-RUN     pip install ipyleaflet
+COPY    requirements.txt /home
+RUN     pip install -r /home/requirements.txt
+RUN     rm /home/requirements.txt
+
+RUN apt-get install -y \
+    python-gdal \
+    libgdal-dev \
+    gdal-bin  
+
 RUN     jupyter nbextension enable --py --sys-prefix ipyleaflet
 
-# tensorflow
-RUN     pip install tensorflow
-
 # enable parallel computing
-RUN     pip install ipyparallel
 RUN     jupyter notebook --generate-config
 RUN     sed -i "/# Configuration file for jupyter-notebook./a  \ 
                 c.NotebookApp.server_extensions.append('ipyparallel.nbextension')" \
             /root/.jupyter/jupyter_notebook_config.py
-
-# install python environment for crc4 scripts
-RUN     apt-get install -y python-numpy python-scipy \
-         python-gdal python-matplotlib libgdal-dev gdal-bin python-shapely \
-         python-opencv
-
+         
 # install mlpy (with MaximumLikelihoodC and LibSvm)
-RUN     apt-get install -y libgsl0-dev
 ADD     mlpy-3.5.0 /mlpy-3.5.0
 WORKDIR /mlpy-3.5.0
 RUN     python setup.py install
@@ -51,22 +49,8 @@ RUN     gcc -shared -Wall -g -o libprov_means.so -fPIC prov_means.c
 RUN     cp libprov_means.so /usr/lib/libprov_means.so
 RUN     rm prov_means.c
 
-# scikit-learn
-#RUN     pip install -U scikit-learn
-
 EXPOSE 8888
-
-# setup for earthengine
-RUN     pip install pyasn1 --upgrade
-RUN     pip install --upgrade setuptools && \
-        pip install google-api-python-client && \
-        pip install --upgrade oauth2client && \
-        pip install pyCrypto && \
-        apt-get install -y libssl-dev
-RUN     pip install earthengine-api
-
-# opencv
-RUN     pip install opencv-python
+EXPOSE 6006
 
 # install auxil
 COPY    dist/auxil-1.0.tar.gz /home/auxil-1.0.tar.gz
@@ -77,11 +61,9 @@ WORKDIR /home
 RUN     rm -rf auxil-1.0
 RUN     rm auxil-1.0.tar.gz
 
-# SPy
-RUN     pip install spectral
-
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
+ADD     auxil /home/auxil 
 ADD     imagery_initial /home/imagery
 COPY    Chapter1.ipynb /home/Chapter1.ipynb
 COPY    Chapter2.ipynb /home/Chapter2.ipynb

@@ -23,7 +23,7 @@ def disp(infile,bandnumber):
     band = image[bandnumber-1,:,:]   
     mn = np.amin(band)
     mx = np.amax(band)
-    plt.imshow((band-mn)/(mx-mn), cmap='gray')  
+    plt.imshow((band-mn)/(mx-mn), cmap='gray')
     plt.show()                        
 
 if __name__ == '__main__':

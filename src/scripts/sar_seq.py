@@ -14,7 +14,7 @@
 # Copyright (c) 2018 Mort Canty
 
 def call_register((fn0,fni,dims)):
-    from registersar import register
+    from auxil.registersar import register
     return register(fn0,fni,dims)
 
 def call_median_filter(pv):
@@ -165,7 +165,7 @@ def PV((fns,n,cols,rows,bands)):
         detj = k1*xsi1
     elif bands==1:
         p = 1
-        detsumj = k  
+        detsumj = k+0.0 # !!! deep copy
         k -= k1
         detsumj1 = k
         detj = k1    
@@ -181,7 +181,7 @@ def PV((fns,n,cols,rows,bands)):
 #  test statistic
     lnRj = n*( p*( j*np.log(j)-(j-1)*np.log(j-1.) ) + (j-1)*logdetsumj1 + logdetj - j*logdetsumj )  
     if (bands==9) or (bands==4) or (bands==1):
-#      full quad, dual or single pol  (p = 3, 2 or 1)      
+#      full quad, dual pol or intensity (p = 3, 2 or 1)      
         f =p**2
     else:
 #      quad and dual diagonal matrix cases (f = 3 or 2, p1 = p2 (= p3) =: p = 1)
@@ -189,9 +189,9 @@ def PV((fns,n,cols,rows,bands)):
         p = 1
     rhoj = 1 - (2.*p**2 - 1)*(1. + 1./(j*(j-1)))/(6.*p*n)
     omega2j = -(f/4.)*(1.-1./rhoj)**2 + (1./(24.*n*n))*p*p*(p*p-1)*(1+(2.*j-1)/(j*(j-1))**2)/rhoj**2     
-#  return p-values  
+#  return (p-values, lnRj)  
     Z = -2*rhoj*lnRj
-    return 1.0 - ((1.-omega2j)*stats.chi2.cdf(Z,[f])+omega2j*stats.chi2.cdf(Z,[f+4]))
+    return ( 1.0-((1.-omega2j)*stats.chi2.cdf(Z,[f])+omega2j*stats.chi2.cdf(Z,[f+4])), lnRj )
 
 def change_maps(pvarray,significance):
     import numpy as np
@@ -214,13 +214,13 @@ def change_maps(pvarray,significance):
             cmap[idx] = j+1 
             bmap[idx,j] = 255 
             if ell==0:
-                smap[idx] = j+1             
+                smap[idx] = j+1    
     return (cmap,smap,fmap,bmap)
                        
 def main():  
     import numpy as np
     import os, sys, time, getopt, gdal
-    from subset import subset
+    from auxil import subset
     from ipyparallel import Client
     from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
     from tempfile import NamedTemporaryFile
@@ -230,15 +230,15 @@ Usage:
 
 Sequential change detection for polarimetric SAR images
 
-python %s [OPTIONS]  infiles outfile enl
+python %s [OPTIONS]  infiles* outfile enl
 
 Options:
   
   -h           this help
   -m           run 3x3 median filter on p-values prior to thresholding (e.g. for noisy satellite data)  
-  -d  dims     files are to be co-registered to a subset dims = [x0,y0,rows,cols] of the first image, otherwise
+  -d  <list>   files are to be co-registered to a subset dims = [x0,y0,rows,cols] of the first image, otherwise
                it is assumed that the images are co-registered and have identical spatial dimensions  
-  -s  signif   significance level for change detection (default 0.01)
+  -s  <float>  significance level for change detection (default 0.0001)
 
 infiles:
 
@@ -257,7 +257,7 @@ enl:
     options,args = getopt.getopt(sys.argv[1:],'hmd:s:')
     medianfilter = False
     dims = None
-    significance = 0.01
+    significance = 0.0001
     for option, value in options: 
         if option == '-h':
             print usage
@@ -286,14 +286,15 @@ enl:
     if dims is not None:
 #  images are not yet co-registered, so subset first image and register the others
         _,_,cols,rows = dims
-        fn0 = subset(fns[0],dims)
+        fn0 = subset.subset(fns[0],dims)
         args1 = [(fns[0],fns[i],dims) for i in range(1,k)]
         try:
             print ' \nattempting parallel execution of co-registration ...' 
             start1 = time.time()  
             c = Client()
             print 'available engines %s'%str(c.ids)
-            v = c[:]   
+            v = c[:]  
+            v.execute('from registersar import register') 
             fns = v.map_sync(call_register,args1)
             print 'elapsed time for co-registration: '+str(time.time()-start1) 
         except Exception as e: 
@@ -312,6 +313,16 @@ enl:
     print 'number of images: %i'%k
     print 'equivalent number of looks: %f'%n
     print 'significance level: %f'%significance
+    if bands==9:
+        print 'Quad ploarization'
+    elif bands==4:
+        print 'Dual polarizaton'
+    elif bands==3:
+        print 'Quad polarization, diagonal only'
+    elif bands==2:
+        print 'Dual polarization, diagonal only'
+    else:
+        print 'Intensity image'
 #  output file
     path = os.path.abspath(fns[0])    
     dirn = os.path.dirname(path)
@@ -319,6 +330,7 @@ enl:
 #  create temporary, memory-mapped array of change indices p(Ri<ri)
     mm = NamedTemporaryFile()
     pvarray = np.memmap(mm.name,dtype=np.float64,mode='w+',shape=(k-1,k-1,rows*cols))  
+    lnQs = np.zeros(k-1)
     print 'pre-calculating Rj and p-values ...' 
     start1 = time.time() 
     try:
@@ -332,7 +344,10 @@ enl:
             print i+1,  
             sys.stdout.flush()              
             args1 = [(fns[i:j+2],n,cols,rows,bands) for j in range(i,k-1)]         
-            pvs = v.map_sync(PV,args1) 
+            results = v.map_sync(PV,args1) # list of tuples (p-value, lnRj)
+            pvs = [result[0] for result in results] 
+            lnRjs = np.array([result[1] for result in results]) 
+            lnQs[i] = np.sum(lnRjs) 
             if medianfilter:
                 pvs = v.map_sync(call_median_filter,pvs)           
             for j in range(i,k-1):
@@ -345,7 +360,10 @@ enl:
             print i+1,   
             sys.stdout.flush()             
             args1 = [(fns[i:j+2],n,cols,rows,bands) for j in range(i,k-1)]                         
-            pvs = map(PV,args1)            
+            results = map(PV,args1)  # list of tuples (p-value, lnRj)
+            pvs = [result[0] for result in results]  
+            lnRjs = np.array([result[1] for result in results]) 
+            lnQs[i] = np.sum(lnRjs)           
             if medianfilter:
                 pvs = map(call_median_filter,pvs)
             for j in range(i,k-1):

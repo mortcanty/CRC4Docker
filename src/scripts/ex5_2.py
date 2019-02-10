@@ -27,7 +27,7 @@ def main():
              cv.RETR_LIST,cv.CHAIN_APPROX_NONE)
     arr = np.zeros((rows,cols),dtype=np.uint8)
     cv.drawContours(arr, contours, -1, 255)
-    plt.imshow(arr,cmap='gray'); plt.show()
+    plt.imshow(arr[:200,:200],cmap='gray'); plt.show()
 #  determine Hu moments        
     num_contours = len(hierarchy[0])    
     hus = np.zeros((num_contours,7),dtype=np.float32)
@@ -36,10 +36,12 @@ def main():
         cv.drawContours(arr, contours, i, 1)                      
         m = cv.moments(arr)
         hus[i,:] = cv.HuMoments(m).ravel()
-#  plot histogram of logarithms of the first Hu moment    
-    idx = np.where(hus[:,0]>0)  
-    hist,_ = np.histogram(np.log(hus[idx,0]),50)    
-    plt.plot(range(50), hist, 'b-') 
+#  plot histogram of logs of the first Hu moments    
+    for i in range(3):
+        idx = np.where(hus[:,i]>0) 
+        hist,e=np.histogram(np.log(hus[idx,i]),50)   
+        plt.plot(e[1:],hist,label='Hu moment %i'%(i+1))
+    plt.legend(); plt.xlabel('log($\mu$)'); plt.show()
 
 if __name__ == '__main__':
     main()    

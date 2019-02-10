@@ -55,10 +55,26 @@ def mean_shift(data,idx,hs,nc,nr,nb):
     return (m,np.reshape(cpts,n),cpts_max)            
                
 def main():
-    usage = '''Usage: python %s [-h] [-s spatial bandwidth] 
-              [-r spectral bandwidth] [-m min segment size] 
-              [-d dims] [-p pos] fileName\n
-              spatial and spectral dimensions are lists, e.g., -d [0,0,400,400]'''%sys.argv[0]    
+ 
+    usage = '''
+Usage: 
+--------------------------------------
+
+Segment a multispectral image with mean shift 
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -r  <int>     spectral bandwidth (default 15)
+  -s  <int>     spatial bandwidth (default 15)
+  -m  <int>     minimum segment size (default 30) 
+
+  -------------------------------------'''%sys.argv[0]   
+                
     options,args = getopt.getopt(sys.argv[1:],'hs:r:m:d:p:')
     dims = None
     pos = None
@@ -109,7 +125,7 @@ def main():
     k = 0
     for b in pos:
         band = inDataset.GetRasterBand(b)
-        data[:,:,k] = auxil.byteStretch(band.ReadAsArray(x0,y0,nc,nr))
+        data[:,:,k] = auxil.bytestr(band.ReadAsArray(x0,y0,nc,nr))
         k += 1
 #  normalize spatial/spectral    
     data = data*hs/hr

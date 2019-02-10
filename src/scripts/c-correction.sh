@@ -5,7 +5,7 @@
 #
 # Usage:
 #
-#  ./c-correction.sh spatialDims bandPos numClasses solarAzimuth solarElevation msImage demImage
+#  ./c-correction.sh spatialDims bandPos numEMClasses solarAzimuth solarElevation msImage demImage
 echo 
 echo "=================================================="
 echo "                  C-Correction"
@@ -21,7 +21,7 @@ imagePixelSize=$(gdalinfo $6 | grep Pixel | awk '{print $4}')
 demPixelSize=$(gdalinfo $7 | grep Pixel | awk '{print $4}')  
 echo Image pixel size: $imagePixelSize
 echo DEM pixel size: $demPixelSize	   
-echo 'PCA... '
+echo 'PCA... '  
 pcaImage=$(python /home/pca.py -n -d $1 -p $2 $6 | tee /dev/tty \
 	   | grep written \
 	   | awk '{print $4}')

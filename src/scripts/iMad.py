@@ -18,22 +18,21 @@ import os, sys,time, getopt
 
 def main():   
     usage = '''
-    Usage:
+Usage:
 ------------------------------------------------
+Run the iterated MAD algorithm on two multispectral images   
 
 python %s [OPTIONS] filename1 filename2
     
-Perform image-image registration of two polarimetric SAR images   
-    
 Options:
 
-   -h      this help
-   -n      suppress graphics
-   -i      maximum iterations (default 50)
-   -d      spatial subset list e.g. -d [0,0,500,500]
-   -p      band positions list e.g. -p [1,2,3]
-   -l      regularization (default 0)
-   -c      append canonical variates to output
+   -h           this help
+   -i  <int>    maximum iterations (default 50)
+   -d  <list>   spatial subset list e.g. -d [0,0,500,500]
+   -p  <list>   band positions list e.g. -p [1,2,3]
+   -l  <float>  regularization (default 0)
+   -n           suppress graphics
+   -c           append canonical variates to output
     
     
 The output MAD variate file is has the same format
@@ -80,7 +79,7 @@ For ENVI files, ext1 or ext2 is the empty string.
     basename1 = os.path.basename(fn1)
     root1, ext1 = os.path.splitext(basename1)
     basename2 = os.path.basename(fn2)
-    root2, ext2 = os.path.splitext(basename2)
+    root2, _ = os.path.splitext(basename2)
     outfn = path + '/' + 'MAD(%s-%s)%s'%(root1,root2,ext1)     
     inDataset1 = gdal.Open(fn1,GA_ReadOnly)     
     inDataset2 = gdal.Open(fn2,GA_ReadOnly) 
@@ -156,20 +155,22 @@ For ENVI files, ext1 or ext2 is the empty string.
                 cpm.update(tile[idx,:],wts[idx])
             else:
                 cpm.update(tile[idx,:])               
-#     weighted covariance matrices and means 
+#      weighted covariance matrices and means 
         S = cpm.covariance() 
         means = cpm.means()    
-#     reset prov means object           
+#      reset prov means object           
         cpm.__init__(2*bands)  
         s11 = S[0:bands,0:bands]
+        s11 = (1-lam)*s11 + lam*np.identity(bands)
         s22 = S[bands:,bands:] 
+        s22 = (1-lam)*s22 + lam*np.identity(bands)
         s12 = S[0:bands,bands:]
         s21 = S[bands:,0:bands]        
         c1 = s12*linalg.inv(s22)*s21 
         b1 = s11
         c2 = s21*linalg.inv(s11)*s12
         b2 = s22
-#     solution of generalized eigenproblems 
+#      solution of generalized eigenproblems 
         if bands>1:
             mu2a,A = auxil.geneiv(c1,b1)                
             mu2b,B = auxil.geneiv(c2,b2)               

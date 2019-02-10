@@ -1,0 +1,4 @@
+#!/bin/bash
+docker stop tfgpu
+docker rm tfgpu
+docker run --runtime=nvidia -p 8888:8888 -p 6006:6006 --name=tfgpu -it -v /home/mort/python/CRC4Docker/src/myimagery:/notebooks/myimagery tensorflow/tensorflow:latest-gpu bash

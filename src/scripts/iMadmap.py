@@ -3,7 +3,7 @@
 #  Name:     iMadmap.py
 #  Purpose: Make change map from iMAD variates
 #  Usage (from command line):             
-#    python iMadvis.py  [options] fileNmae significance
+#    python iMadmap.py  [options] fileNmae significance
 #
 #  Copyright (c) 2018 Mort Canty
 
@@ -13,10 +13,23 @@ from scipy import stats, ndimage
 from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
 
-def main(): 
-    usage = '''Usage: python %s [-h] [-m] [-d dims] fileName significance
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400] '''%sys.argv[0]
-    options,args = getopt.getopt(sys.argv[1:],'hmr:nd:p:')
+def main():    
+    usage = '''
+Usage:
+------------------------------------------------
+Make a change map from iMAD variates at a given significance level 
+    
+python %s [OPTIONS] madfile significance
+    
+Options:
+
+   -h           this help
+   -m           run a 3x3 median filter over the P-values
+   -d  <list>   spatial subset list e.g. -d [0,0,500,500]
+   
+-----------------------------------------------------''' %sys.argv[0]
+                       
+    options,args = getopt.getopt(sys.argv[1:],'hmd:')
     dims = None
     pos = None
     median = False

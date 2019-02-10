@@ -98,6 +98,20 @@ def plr(infile,nitr=3):
 def main():
     usage = '''Usage: python %s [-h] [-i iterations] probfileName
             '''%sys.argv[0]
+    usage = '''
+Usage:
+------------------------------------------------
+
+Probabilistic label relaxation post processing  
+
+python %s [OPTIONS]  classProbFileName
+
+Options:
+  
+  -h         this help  
+  -i  <int>  number of iterations (default 3)
+
+-------------------------------------------------'''%sys.argv[0]                  
     options,args = getopt.getopt(sys.argv[1:],'hi:')
     iterations = 3
     for option, value in options: 

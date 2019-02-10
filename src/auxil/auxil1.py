@@ -76,7 +76,7 @@ def fv_test(x0,x1):
 # ------------
 
 def dist(n,m):
-# n cols x m rows distance array    
+    ''''n cols x m rows distance array'''    
     result = []
     for i in range(m):
         for j in range(n):
@@ -104,7 +104,12 @@ class Cpm(object):
         self.sw = 0.0000001
          
     def update(self,Xs,Ws=None):
-        n,N = np.shape(Xs)       
+        lngth = len(np.shape(Xs))
+        if lngth==2:
+            n,N = np.shape(Xs)  
+        else:
+            N = len(Xs)  
+            n = 1   
         if Ws is None:
             Ws = np.ones(n)
         sw = ctypes.c_double(self.sw)        
@@ -156,8 +161,8 @@ def center(K):
 # generalized eigenproblem
 # ------------------------   
 def choldc(A):
-# Cholesky-Banachiewicz algorithm, 
-# A is a numpy matrix
+    '''Cholesky-Banachiewicz algorithm, 
+       A is a numpy matrix'''
     L = A - A  
     for i in range(len(L)):
         for j in range(i):
@@ -172,8 +177,8 @@ def choldc(A):
     return L               
         
 def geneiv(A,B): 
-# solves A*x = lambda*B*x for numpy matrices A and B, 
-# returns eigenvectors in columns
+    '''solves A*x = lambda*B*x for numpy matrices A, B 
+       returns eigenvectors in columns'''
     Li = np.linalg.inv(choldc(B))
     C = Li*A*(Li.transpose())
     C = np.asmatrix((C + C.transpose())*0.5,np.float32)
@@ -493,16 +498,7 @@ def lin2pcstr(x):
     fp = np.where(bin_edges>=upper,255,fp)
     return np.interp(x,bin_edges,fp)     
 
-def bytestr(x):       
-    mx = np.max(x)
-    mn = np.min(x)  
-    if mx-mn > 0:
-        x = (x-mn)*255.0/(mx-mn)    
-    x = np.where(x<0,0,x)  
-    x = np.where(x>255,255,x)
-    return  x  
-
-def byteStretch(arr,rng=None):
+def bytestr(arr,rng=None):
 #  byte stretch image numpy array
     shp = arr.shape
     arr = arr.ravel()

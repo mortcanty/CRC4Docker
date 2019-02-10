@@ -108,8 +108,8 @@ def main():
 Usage:
 ------------------------------------------------
 
-Run a gamma MAP filter in the diagonal elements 
-for a polarimetric matrix image
+Run a gamma MAP filter over the diagonal elements 
+of a polarimetric matrix image
 
 python %s [OPTIONS] filename enl
     

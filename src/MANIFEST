@@ -11,4 +11,7 @@ auxil/header.py
 auxil/lookup.py
 auxil/png.py
 auxil/readshp.py
+auxil/registerms.py
+auxil/registersar.py
+auxil/subset.py
 auxil/supervisedclass.py

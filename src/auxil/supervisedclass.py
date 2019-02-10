@@ -12,11 +12,11 @@
 import auxil1
 import numpy as np  
 import tensorflow as tf
+from tensorflow.keras import layers
 from scipy.optimize import minimize_scalar
-from mlpy import MaximumLikelihoodC, LibSvm  
+from mlpy import MaximumLikelihoodC, LibSvm   
 
-tf.logging.set_verbosity('ERROR')
-   
+tf.logging.set_verbosity('ERROR')   
 
 class Maxlike(MaximumLikelihoodC):
        
@@ -69,7 +69,8 @@ class Gausskernel(object):
     def output(self,sigma,Hs,symm=True):
         pvs = np.zeros((Hs.shape[0],self._K))
         kappa = auxil1.kernelMatrix(
-            Hs,self._Gs,gma=0.5/(sigma**2),nscale=1,kernel=1)[0]
+            Hs,self._Gs,gma=0.5/(sigma**2),
+                                nscale=1,kernel=1)[0]
         if symm:
             kappa[range(self._m),range(self._m)] = 0
         for j in range(self._K):
@@ -117,9 +118,9 @@ class Gausskernel(object):
 
 class Ffn(object):
  
-    def __init__(self,Gs,ls,L,epochs,validate): 
+    def __init__(self,Gs,ls,Ls,epochs,validate): 
 #      setup the network architecture        
-        self._L = L[0] 
+        self._L = Ls[0] 
         self._m,self._N = Gs.shape 
         self._K = ls.shape[1]
         self._epochs = epochs
@@ -211,8 +212,8 @@ class Ffn(object):
     
 class Ffnbp(Ffn):
     
-    def __init__(self,Gs,ls,L,epochs=100,validate=False):
-        Ffn.__init__(self,Gs,ls,L,epochs,validate)
+    def __init__(self,Gs,ls,Ls,epochs=100,valid=False):
+        Ffn.__init__(self,Gs,ls,Ls,epochs,valid)
            
     def train(self):
         eta = 0.01
@@ -256,8 +257,8 @@ class Ffnbp(Ffn):
     
 class Ffncg(Ffn):
     
-    def __init__(self,Gs,ls,L,epochs=100,validate=False):
-        Ffn.__init__(self,Gs,ls,L,epochs,validate)
+    def __init__(self,Gs,ls,Ls,epochs=100,validate=False):
+        Ffn.__init__(self,Gs,ls,Ls,epochs,validate)
     
     def gradient(self):
 #      gradient of cross entropy wrt synaptic weights          
@@ -278,9 +279,11 @@ class Ffncg(Ffn):
         return H    
             
     def rop(self,V):     
-#      reshape V to dimensions of Wh and Wo and transpose
-        VhT = np.reshape(V[:(self._N+1)*self._L],(self._N+1,self._L)).T
-        Vo = np.mat(np.reshape(V[self._L*(self._N+1)::],(self._L+1,self._K)))
+#      reshape V to dimensions of Wh and Wo, transpose
+        VhT = np.reshape(V[:(self._N+1)*self._L],
+                         (self._N+1,self._L)).T
+        Vo = np.mat(np.reshape(V[self._L*(self._N+1)::],
+                         (self._L+1,self._K)))
         VoT = Vo.T
 #      transpose the output weights
         Wo = self._Wo
@@ -289,54 +292,63 @@ class Ffncg(Ffn):
         M,n = self.vforwardpass(self._Gs) 
 #      evaluation of v^T.H
         Z = np.zeros(self._m)  
-        D_o = self._ls - M                          #d^o
-        RIh = VhT*self._Gs                          #Rv{I^h}
-        tmp = np.vstack((Z,RIh))                  
-        RN = n.A*(1-n.A)*tmp.A                     #Rv{n}   
-        RIo = WoT*RN + VoT*n                       #Rv{I^o}
-        Rd_o = -np.mat(M*(1-M)*RIo.A)              #Rv{d^o}
-        Rd_h = n.A*(1-n.A)*( (1-2*n.A)*tmp.A*(Wo*D_o).A + (Vo*D_o).A + (Wo*Rd_o).A )
-        Rd_h = np.mat(Rd_h[1::,:])                          #Rv{d^h}
-        REo = -(n*Rd_o.T - RN*D_o.T).ravel()       #Rv{dE/dWo}
-        REh = -(self._Gs*Rd_h.T).ravel()            #Rv{dE/dWh}
-        return np.hstack((REo,REh))                #v^T.H
+        D_o = self._ls - M                 #d^o
+        RIh = VhT*self._Gs                 #Rv{I^h}
+        tmp = np.vstack((Z,RIh))         
+        RN = n.A*(1-n.A)*tmp.A             #Rv{n}   
+        RIo = WoT*RN + VoT*n               #Rv{I^o}
+        Rd_o = -np.mat(M*(1-M)*RIo.A)      #Rv{d^o}
+        Rd_h = n.A*(1-n.A)*( (1-2*n.A)*tmp.A
+               *(Wo*D_o).A + (Vo*D_o).A + (Wo*Rd_o).A)
+        Rd_h = np.mat(Rd_h[1::,:])         #Rv{d^h}
+        REo = -(n*Rd_o.T-RN*D_o.T).ravel() #Rv{dE/dWo} 
+        REh = -(self._Gs*Rd_h.T).ravel()   #Rv{dE/dWh}
+        return np.hstack((REo,REh))        #v^T.H
                                          
-    
     def train(self):
         try: 
             cost = []   
             costv = []          
-            w = np.concatenate((self._Wh.A.ravel(),self._Wo.A.ravel()))
+            w = np.concatenate((self._Wh.A.ravel(),
+                                self._Wo.A.ravel()))
             nw = len(w)
             g = self.gradient()
             d = -g
             k = 0
             lam = 0.001
             while k < self._epochs:
-                d2 = np.sum(d*d)                # d^2
-                dTHd = np.sum(self.rop(d).A*d)  # d^T.H.d
+                d2=np.sum(d*d)              # d^2
+                dTHd=np.sum(self.rop(d).A*d)# d^T.H.d
                 delta = dTHd + lam*d2
                 if delta < 0:
                     lam = 2*(lam-delta/d2)
                     delta = -dTHd
-                E1 = self.cost()                # E(w)
-                dTg = np.sum(d*g)               # d^T.g
+                E1 = self.cost()            # E(w)
+                dTg = np.sum(d*g)           # d^T.g
                 alpha = -dTg/delta
                 dw = alpha*d
                 w += dw
-                self._Wh = np.mat(np.reshape(w[0:self._L*(self._N+1)],(self._N+1,self._L)))            
-                self._Wo = np.mat(np.reshape(w[self._L*(self._N+1)::],(self._L+1,self._K)))
-                E2 = self.cost()                # E(w+dw)
-                Ddelta = -2*(E1-E2)/(alpha*dTg) # quadricity
+                self._Wh = np.mat(np.reshape(
+                       w[0:self._L*(self._N+1)], 
+                       (self._N+1,self._L)))            
+                self._Wo = np.mat(np.reshape(
+                       w[self._L*(self._N+1)::],
+                       (self._L+1,self._K)))
+                E2 = self.cost()           # E(w+dw)
+                Ddelta = -2*(E1-E2)/(alpha*dTg)
                 if Ddelta < 0.25:
-                    w -= dw                     # undo weight change
-                    self._Wh = np.mat(np.reshape(w[0:self._L*(self._N+1)],(self._N+1,self._L)))
-                    self._Wo = np.mat(np.reshape(w[self._L*(self._N+1)::],(self._L+1,self._K)))     
-                    lam *= 4.0                  # decrease step size
-                    if lam > 1e20:              # if step too small
-                        k = self._epochs        #     give up
-                    else:                       # else
-                        d = -g                  #     restart             
+                    w -= dw                # undo 
+                    self._Wh = np.mat(np.reshape(
+                        w[0:self._L*(self._N+1)],
+                        (self._N+1,self._L)))
+                    self._Wo = np.mat(np.reshape(
+                        w[self._L*(self._N+1)::],
+                        (self._L+1,self._K)))     
+                    lam *= 4.0      # decrease step
+                    if lam > 1e20:  # step too small
+                        k = self._epochs  # give up
+                    else:          # else
+                        d = -g     # restart             
                 else:
                     k += 1
                     cost.append(E1)   
@@ -347,7 +359,8 @@ class Ffncg(Ffn):
                     if k % nw == 0:
                         beta = 0.0
                     else:
-                        beta = np.sum(self.rop(g).A*d)/dTHd
+                        beta = np.sum(
+                            self.rop(g).A*d)/dTHd
                     d = beta*d - g
             return (cost,costv) 
         except Exception as e:
@@ -356,8 +369,8 @@ class Ffncg(Ffn):
         
 class Ffnekf(Ffn):
     
-    def __init__(self,Gs,ls,L,epochs=10,validate=False):
-        Ffn.__init__(self,Gs,ls,L,epochs,validate)
+    def __init__(self,Gs,ls,Ls,epochs=10,validate=False):
+        Ffn.__init__(self,Gs,ls,Ls,epochs,validate)
 #      weight covariance matrices
         self._Sh = np.zeros((self._N+1,self._N+1,self._L)) 
         for i in range(self._L):
@@ -428,8 +441,8 @@ class Ffnekf(Ffn):
             return None                                     
     
 class Dnn_learn(object):    
-    '''High-level Dnn classifier, now depricated '''
-    def __init__(self,Gs,ls,L,epochs=1000):
+    '''High-level Dnn classifier, now deprecated '''
+    def __init__(self,Gs,ls,Ls,epochs=1000):
 #      setup the network architecture, Geron, p.164     
         self._Gs = Gs
         self._y = np.argmax(ls,1)
@@ -438,7 +451,7 @@ class Dnn_learn(object):
         feature_cols = tf.contrib.learn. \
         infer_real_valued_columns_from_input(self._Gs)
         dnn = tf.contrib.learn.DNNClassifier(   
-                hidden_units=L, 
+                hidden_units=Ls, 
                 n_classes=n_classes, 
                 feature_columns=feature_cols)
         self._dnn=tf.contrib.learn.SKCompat(dnn)
@@ -467,7 +480,7 @@ class Dnn_learn(object):
     
 class Dnn_core(object):    
     '''High-level core TensorFlow Dnn classifier'''
-    def __init__(self,Gs,ls,L,epochs=100):
+    def __init__(self,Gs,ls,Ls,epochs=100):
 #      setup the network architecture  
         self._Gs = Gs   
         n_classes = ls.shape[1]
@@ -487,7 +500,7 @@ class Dnn_core(object):
                            batch_size = Gs.shape[0])
 #      instantiate the classifier                    
         self._dnn = tf.estimator.DNNClassifier(   
-                hidden_units=L, 
+                hidden_units=Ls, 
                 n_classes=n_classes,
                 feature_columns=feature_cols)
                     
@@ -517,7 +530,60 @@ class Dnn_core(object):
             probabilities.append(r['probabilities'])
         return (np.array(classes)+1, 
                 np.array(probabilities))
-                    
+
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)               
+    
+class Dnn_keras(object):    
+    '''High-level TensorFlow (keras) Dnn classifier'''
+    def __init__(self,Gs,ls,Ls,epochs=100):
+#      setup the network architecture  
+        self._Gs = Gs   
+        n_classes = ls.shape[1]
+        self._labels = ls
+        self._epochs = epochs
+        self._dnn = tf.keras.Sequential()
+#      hidden layers        
+        for L in Ls:
+            self._dnn \
+             .add(layers.Dense(L,activation='relu'))
+#      output layer
+        self._dnn \
+          .add(layers.Dense(n_classes,
+                            activation='softmax'))       
+#      initialize                             
+        self._dnn.compile(
+     optimizer=tf.train.GradientDescentOptimizer(0.01),
+     loss='categorical_crossentropy')
+        
+    def train(self):
+        try:           
+            self._dnn.fit(self._Gs,self._labels,
+                        epochs=self._epochs,verbose=0)
+            return True 
+        except Exception as e:
+            print 'Error: %s'%e 
+            return None             
+        
+    def classify(self,Gs):     
+#      predict new data                       
+        Ms = self._dnn.predict(Gs)
+        cls = np.argmax(Ms,1)+1
+        return (cls,Ms)
+
+    def test(self,Gs,ls):
+        m = np.shape(Gs)[0]
+        classes, _ = self.classify(Gs)
+        classes = np.asarray(classes,np.int16)
+        labels = np.argmax(np.transpose(ls),axis=0)+1
+        misscls = np.where(classes-labels)[0]
+        return len(misscls)/float(m)  
+
 
 class Svm(object):   
       

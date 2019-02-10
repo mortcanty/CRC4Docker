@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #Name:  kmeans.py
-#  Purpose:  Perforn K-means clustering
+#  Purpose:  Perform K-means clustering
 #  Usage (from command line):             
 #    python kmeans.py [options] fileNmae
 #
@@ -13,8 +13,24 @@ from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
 from scipy.cluster.vq import kmeans,vq
 
 def main(): 
-    usage = '''Usage: python %s [-h] [-k clusters] [-d dims] [-p pos] fileName\n
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400]'''%sys.argv[0]    
+    usage = '''
+Usage: 
+--------------------------------------
+
+Perform K-means clustering on multispectral imagery
+
+python %s [OPTIONS] filename
+
+Options:
+
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -k  <int>     number of clusters (default 6) 
+
+  -------------------------------------'''%sys.argv[0]   
+             
     options,args = getopt.getopt(sys.argv[1:],'hk:d:p:')
     dims = None
     pos = None
@@ -53,7 +69,7 @@ def main():
     print 'Input %s'%infile
     print 'Number of clusters %i'%K
     start = time.time()               
-    G = np.zeros((rows*cols,len(pos))) 
+    G = np.zeros((rows*cols,bands)) 
     k = 0                                   
     for b in pos:
         band = inDataset.GetRasterBand(b)

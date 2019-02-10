@@ -16,7 +16,19 @@ from spectral.algorithms.algorithms import calc_stats
 import spectral.io.envi as envi
  
 def main():      
-    usage = '''Usage: python %s [-h] fileName'''%sys.argv[0]
+    usage = '''
+Usage:
+------------------------------------------------
+
+RX anomaly detection for multi- and hyperspectral images
+
+python %s [OPTIONS]  filename
+
+Options:
+  
+  -h         this help
+  
+-------------------------------------------------'''%sys.argv[0]  
     options,args = getopt.getopt(sys.argv[1:],'h')
     for option, value in options: 
         if option == '-h':

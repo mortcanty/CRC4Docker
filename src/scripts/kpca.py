@@ -16,13 +16,29 @@ from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly, GDT_Float32
 import matplotlib.pyplot as plt
     
-def main():
-    usage = '''Usage: python %s [-h] [-n] [-d dims] [-p pos] [-s sample size] \n
-           [-e number of eigenvectors (kPCs, default 10)] -[k kernel] fileName\n
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400] \n
-            use -k 0 for linear, -k 1 for Gaussian kernel (default) \n
-            use -s 0 to use kmeans sampling with 100 clusters (default) \n
-            use -n to disable graphics output'''%sys.argv[0]
+def main():    
+    usage = '''            
+Usage: 
+--------------------------------------
+
+Kernel principal components analysis
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -k  <int>     kernel: 0=linear, 1=Gassian (default)                              
+  -s  <int>     sample size for estimation of kernel 
+                matrix, zero for kmeans to determine
+                100 cluster centers (default)
+  -e  <int>     number of eigenvectors to keep (default 10)                
+  -n            disable graphics   
+  
+  -------------------------------------'''%sys.argv[0]               
+                    
     options,args = getopt.getopt(sys.argv[1:],'hnd:p:s:e:k:')
     dims = None
     pos = None

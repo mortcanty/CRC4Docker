@@ -22,7 +22,7 @@ def make_image(redband,greenband,blueband,rows,cols,enhance):
         i = 0
         for tmp in [redband,greenband,blueband]:
             tmp = tmp.ravel()
-            X[:,i] = auxil.bytestr(tmp)
+            X[:,i] = auxil.bytestr(tmp,[0,255])
             i += 1
     elif enhance == 'linear':
         i = 0
@@ -240,17 +240,24 @@ Display an RGB composite image
 python %s [OPTIONS] 
 
 Options:
-
-  -h       this help
-  -f       image or left-hand image (if not specified, it will be queried)
-  -F       right-hand image 
-  -e -E    enhancements (1=linear255 2=linear 3=linear2pc 4=equalization 5=logarithmic (default)) 
-  -p -P    RGB band position lists e.g. -p [1,2,3] 
-  -d -D    spatial subset lists e.g. -d [0,0,200,200]
-  -c -C    display as classification image
-  -o alpha overlay left image onto right with opacity alpha
-  -r labels
-  -s fn    save the figure to file fn      
+  -h            this help
+  -f  <string>  image filename or left-hand image filename 
+                (if not specified, it will be queried)
+  -F  <string>  right-hand image filename, if present
+  -e  <int>     left enhancement (1=linear255 2=linear 
+                3=linear2pc saturation 4=histogram equalization 
+                5=logarithmic (default)
+  -E  <int>     right ditto 
+  -p  <list>    left RGB band positions e.g. -p [1,2,3]
+  -P  <list>    right ditto
+  -d  <list>    left spatial subset [x,y,width,height] 
+                                  e.g. -d [0,0,200,200]
+  -D  <list>    right ditto
+  -c            right display as classification image
+  -C            left ditto
+  -o  <float>   overlay left image onto right with opacity
+  -r  <list>    class labels (list of strings)
+  -s  <string>  save to a file in EPS format      
   
   -------------------------------------'''%sys.argv[0]
   

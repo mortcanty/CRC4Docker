@@ -17,36 +17,36 @@ from osgeo.gdalconst import GA_ReadOnly,GDT_Byte
 
 def em(G,U,T0,beta,rows,cols,unfrozen=None):
     '''Gaussian mixture unsupervised classification'''
-    K,n = U.shape
+    K,m = U.shape
     N = G.shape[1]
     if unfrozen is None:
-        unfrozen = range(n)
+        unfrozen = range(m)
     V = U*0.0
     Nb = np.array([[0.0,0.25,0.0],[0.25,0.0,0.25],[0.0,0.25,0.0]])
     Cs = np.zeros((K,N,N))
     pdens = np.zeros(K)
     fhv = np.zeros(K)
     dU = 1.0
-    itr = 0
+    itr = 0 
     T = T0
-    print 'running EM on %i pixel vectors'%n
+    print 'running EM on %i pixel vectors'%m
     while ((dU > 0.001) or (itr < 10)) and (itr < 500):
         Uold = U+0.0
-        ns = np.sum(U,axis=1)
+        ms = np.sum(U,axis=1)
 #      prior probabilities
-        Ps = np.asarray(ns/n).ravel()
+        Ps = np.asarray(ms/m).ravel()
 #      cluster means
         Ms = np.asarray((np.mat(U)*np.mat(G)).T)
 #      loop over the cluster index
         for k in range(K):
-            Ms[:,k] = Ms[:,k]/ns[k]
-            W = np.tile(Ms[:,k].ravel(),(n,1))
+            Ms[:,k] = Ms[:,k]/ms[k]
+            W = np.tile(Ms[:,k].ravel(),(m,1))
             Ds = G - W
 #          covariance matrix
             for i in range(N):
                 W[:,i] = np.sqrt(U[k,:]) \
                     .ravel()*Ds[:,i].ravel()             
-            C = np.mat(W).T*np.mat(W)/ns[k]
+            C = np.mat(W).T*np.mat(W)/ms[k]
             Cs[k,:,:] = C
             sqrtdetC = np.sqrt(np.linalg.det(C))
             Cinv = np.linalg.inv(C)
@@ -98,17 +98,27 @@ def em(G,U,T0,beta,rows,cols,unfrozen=None):
                                                   
                                         
 def main():
-    usage = '''
+
+    usage = '''            
 Usage: 
----------------------------------------------------------
-python %s  [-p "bandPositions"] [-d "spatialDimensions"] 
-[-K number of clusters] [-M max scale][-m min scale] 
-[-t initial annealing temperature] [-s spatial mixing factor] 
-[-P generate class probabilities image] filename
+--------------------------------------
 
-bandPositions and spatialDimensions are lists, 
-e.g., -p [1,2,4] -d [0,0,400,400]  
+Perform Gaussian mixture clustering on multispectral imagery 
 
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -K  <int>     number of clusters (default 6)
+  -M  <int>     maximum scale (default 2)
+  -m  <int>     minimum scale (default 0) 
+  -t  <float>   initial annealing temperature (default 0.5)
+  -s  <float>   spatial mixing factor (default 0.5)  
+  -P            generate class probabilities image 
+  
 If the input file is named 
 
          path/filenbasename.ext then
@@ -120,7 +130,10 @@ The output classification file is named
 and the class probabilities output file is named
 
          path/filebasename_emprobs.ext
---------------------------------------------------------''' %sys.argv[0]
+  
+  -------------------------------------'''%sys.argv[0]   
+
+
     options, args = getopt.getopt(sys.argv[1:],'hp:d:K:M:m:t:s:P')
     pos = None
     dims = None  

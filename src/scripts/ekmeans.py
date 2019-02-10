@@ -12,8 +12,24 @@ from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
 
 def main(): 
-    usage = '''Usage: python %s [-h] [-k metaclusters] [-d dims] [-b band] fileName\n
-            spatial and dimensions are lists, e.g., -d [0,0,400,400]'''%sys.argv[0]    
+    
+    usage = '''            
+Usage: 
+--------------------------------------
+
+Perform extended K-means clustering
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -b  <int>     band position (default 1)
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -k  <int>     number of metaclusters (default 8)
+  
+  -------------------------------------'''%sys.argv[0]       
+               
     options,args = getopt.getopt(sys.argv[1:],'hk:d:b:p:')
     dims = None
     b = 1
@@ -64,7 +80,7 @@ def main():
     G = G.ravel()
     while (delta>1.0) and (itr<100):
         print 'Clusters: %i delta: %f'%(K,delta)
-        indices =np.where(priors>0.01)[0]
+        indices = np.where(priors>0.01)[0]
         K = indices.size 
         ds = np.zeros((K,m))
         means = means[indices]

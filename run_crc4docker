@@ -1,4 +1,4 @@
 #!/bin/bash
 docker stop crc4
 docker rm crc4
-docker run -d -p 443:8888  -v /home/mort/python/CRC4Docker/src/myimagery:/home/myimagery --name=crc4  mort/crc4docker
+docker run -d -p 443:8888 -p 6006:6006  -v /home/mort/python/CRC4Docker/src/myimagery:/home/myimagery --name=crc4  mort/crc4docker

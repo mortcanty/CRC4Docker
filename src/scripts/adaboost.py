@@ -100,25 +100,30 @@ class Ffnekfab(sc.Ffnekf):
     
 def main():    
     usage = '''
-Usage: 
----------------------------------------------------------
-python %s  [-p bandPositions] [-L number of hidden neurons (2D array)]  
-           [-n instances] [-e epochs/instance] filename trainShapefile
+Usage:
+------------------------------------------------
 
-bandPositions is a list, e.g., -p [1,2,4] 
+supervised classification of multispectral images with ADABOOST.M1
 
+python %s [OPTIONS] filename trainShapefile
+    
+Options:
+
+   -h         this help
+   -p <list>  band positions e.g. -p [1,2,3,4] 
+   -L <int>  number of hidden neurons (default 10)
+   -n <int>   number of nnet instances (default 50)
+   -e <int>   epochs for ekf training (default 3)
+   
 If the input file is named 
 
          path/filenbasename.ext then
 
 The output classification file is named 
 
-         path/filebasename_adaboost.ext
+         path/filebasename_class.ext
 
-and the test results file is named
-
-         path/filebasename_adaboost.tst
---------------------------------------------------------''' %sys.argv[0]
+------------------------------------------------''' %sys.argv[0]
 
     outbuffer = 100
 
@@ -138,7 +143,7 @@ and the test results file is named
         elif option == '-n':
             instances = eval(value)                          
         elif option == '-L':
-            L = eval(value)                           
+            L = [eval(value)]                           
     if len(args) != 2: 
         print 'Incorrect number of arguments'
         print usage
@@ -252,9 +257,13 @@ and the test results file is named
     errtrn = np.array(errtrn)
     errtst = np.array(errtst)
     x = np.arange(1,n+1,1)
-    plt.semilogx(x,errtrn,x,errtst) 
-    plt.xlabel('number of networks')
-    plt.ylabel('classification error')
+    ax = plt.subplot(111)
+    ax.semilogx(x,errtrn,label='train')
+    ax.semilogx(x,errtst,label='test') 
+    ax.legend()
+    ax.set_xlabel('number of networks')
+    ax.set_ylabel('classification error')
+    plt.savefig('/home/mort/LaTeX/new projects/CRC4/Chapter7/fig7_3.eps',bbox_inches='tight')
     plt.show()
 #  classify the image           
     print 'classifying...'

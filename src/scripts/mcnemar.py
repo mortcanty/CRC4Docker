@@ -50,7 +50,7 @@ def main():
             if (n1 != n2) or (K1 != K2):
                 print 'test files are incompatible'
                 return
-            print 'test observbations: %i'%n1
+            print 'test observations: %i'%n1
             print 'classes: %i'%K1
 #          calculate McNemar
             y10 = 0.0

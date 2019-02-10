@@ -14,10 +14,25 @@ from osgeo import gdal
 import matplotlib.pyplot as plt
 from osgeo.gdalconst import GA_ReadOnly,GDT_Float32
 
-def main(): 
-    usage = '''Usage: python %s [-h] [-n]  [-d dims] [-p pos] fileName\n
-            spatial and spectral dimensions are lists, e.g., -d [0,0,400,400] -p [1,2,3]\n
-             use -n to disable graphics output'''%sys.argv[0]
+def main():            
+    usage = '''            
+Usage: 
+--------------------------------------
+
+Minimum noise fraction
+
+python %s [OPTIONS] filename
+
+Options:
+  -h            this help
+  -p  <list>    band positions e.g. -p [1,2,3,4,5,7]
+  -d  <list>    spatial subset [x,y,width,height] 
+                              e.g. -d [0,0,200,200]
+  -r  <int>     number of components for reconstruction 
+  -n            disable graphics   
+  
+  -------------------------------------'''%sys.argv[0]           
+              
     options,args = getopt.getopt(sys.argv[1:],'hnd:p:')
     dims = None
     pos = None
