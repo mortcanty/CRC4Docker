@@ -14,7 +14,7 @@ container in detached mode.
 If you have a Linux installation and one or more  Nvidia graphics cards and wish to use TensorFlow with gpu acceleration
 install the *latest*  Nvidia driver and the Nvidia runtime, see https://github.com/NVIDIA/nvidia-docker.
 
-Then pull and run the gpu-enabled container with
+Then pull and run the gpu-enabled container with 
 
  	sudo docker run --runtime=nvidia -d -p 443:8888 -p 6006:6006 -v <my_image_folder>:/home/myimagery/ --name=crc4 mort/crc4dockergpu
 
