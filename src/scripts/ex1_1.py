@@ -4,12 +4,12 @@ import  numpy as np
 import sys
 from osgeo import gdal   
 from osgeo.gdalconst import GA_ReadOnly 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
  
-def disp(infile,bandnumber):        
+def disp(infile,bandnumber):          
     gdal.AllRegister()             
     inDataset = gdal.Open(infile,GA_ReadOnly)     
-    cols = inDataset.RasterXSize
+    cols = inDataset.RasterXSize 
     rows = inDataset.RasterYSize 
     bands = inDataset.RasterCount   
 

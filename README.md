@@ -11,10 +11,16 @@ On Ubuntu, for example, pull and/or run the container for the first time with
 This maps the host directory my_image_folder to the container directory /home/myimagery/ and runs the
 container in detached mode. 
 
+If you have a Linux installation and one or more  Nvidia graphics cards and wish to use TensorFlow with gpu acceleration
+install the *latest*  Nvidia driver and the Nvidia runtime, see https://github.com/NVIDIA/nvidia-docker.
+
+Then pull and run the gpu-enabled container with
+
+ 	sudo docker run --runtime=nvidia -d -p 443:8888 -p 6006:6006 -v <my_image_folder>:/home/myimagery/ --name=crc4 mort/crc4dockergpu
+
 Point your browser to http://localhost:443 to see the Jupyter home page and open a notebook.
 
-In order to use Earth Engine scripts,  
-you must authenticate. From the home page open a local terminal and enter
+In order to use Earth Engine scripts, you must authenticate. From the home page  open a local terminal and enter
     
     earthengine authenticate
     
