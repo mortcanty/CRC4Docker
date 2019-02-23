@@ -38,6 +38,8 @@ RUN     sed -i "/# Configuration file for jupyter-notebook./a  \
             /root/.jupyter/jupyter_notebook_config.py
          
 # install mlpy (with MaximumLikelihoodC and LibSvm)
+RUN     apt-get install -y libgsl0-dev
+RUN     ln -s /usr/lib/x86_64-linux-gnu/libgsl.so /usr/lib/x86_64-linux-gnu/libgsl.so.0
 ADD     mlpy-3.5.0 /mlpy-3.5.0
 WORKDIR /mlpy-3.5.0
 RUN     python setup.py install

@@ -86,7 +86,7 @@ RUN ln -s $(which ${PYTHON}) /usr/local/bin/python
 #   tf-nightly-gpu
 # Set --build-arg TF_PACKAGE_VERSION=1.11.0rc0 to install a specific version.
 # Installs the latest version by default.
-ARG TF_PACKAGE=tensorflow
+ARG TF_PACKAGE=tf-nightly-gpu
 ARG TF_PACKAGE_VERSION=
 RUN ${PIP} install ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
 
@@ -110,12 +110,16 @@ RUN     ${PIP} install ipyleaflet
 RUN     jupyter nbextension enable --py --sys-prefix ipyleaflet
 RUN     ${PIP} install ipyparallel
 
+RUN     ${PIP} install shapely
+
 EXPOSE 2222
 RUN apt-get install -y python-gdal libgdal-dev gdal-bin 
 RUN ${PIP} install --upgrade tensorflow-probability
 RUN ${PIP} install scipy
 
 # install mlpy (with MaximumLikelihoodC and LibSvm)
+RUN     apt-get install -y libgsl0-dev
+RUN     ln -s /usr/lib/x86_64-linux-gnu/libgsl.so /usr/lib/x86_64-linux-gnu/libgsl.so.0
 ADD     mlpy-3.5.0 /mlpy-3.5.0
 WORKDIR /mlpy-3.5.0
 RUN     python setup.py install
@@ -160,4 +164,4 @@ COPY    Chapter9.ipynb /home/Chapter9.ipynb
 
 RUN ${PYTHON} -m ipykernel.kernelspec
 
-CMD ["bash", "-c", "source /etc/bash.bashrc && jupyter notebook --notebook-dir=/home --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token=''"]
+CMD ["bash", "-c", "source /etc/bash.bashrc && jupyter notebook --notebook-dir=/home --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token=''"] 
