@@ -77,6 +77,7 @@ COPY    Chapter6.ipynb /home/Chapter6.ipynb
 COPY    Chapter7.ipynb /home/Chapter7.ipynb
 COPY    Chapter8.ipynb /home/Chapter8.ipynb
 COPY    Chapter9.ipynb /home/Chapter9.ipynb
+COPY    zfl2019.ipynb /home/zfl2019.ipynb
 
 # ipython notebook startup script
 ADD     notebook.sh /

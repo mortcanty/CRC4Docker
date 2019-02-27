@@ -17,7 +17,7 @@ In order to use Earth Engine scripts, you must authenticate. From the home page 
     
     earthengine authenticate
     
-and follow the instrctions. This adds authentication information to the container and only has to be done once.     
+and follow the instructions. This adds authentication information to the container and only has to be done once.     
 
 Stop the container with
 

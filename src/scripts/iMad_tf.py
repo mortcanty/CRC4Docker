@@ -58,13 +58,13 @@ def geneiv(A,B):
     lambdas,V = tf.linalg.eigh(C)
     return lambdas, tf.matmul(tf.transpose(Li),V)
 
-def imad(x1,x2,pvs):  
+def imad(x1,x2,pvs,niter):  
     ''' IR.MAD algorithm'''
     m = tf.shape(x1)[0]
     N = tf.shape(x1)[1]
     x = tf.concat([x1,x2],axis=1)
     itr = 0
-    while itr<50:
+    while itr<niter:
         itr += 1 
     #  weighted covariance and means    
         cov,ms = tf_covw(x,pvs)
@@ -118,15 +118,18 @@ Options:
    -s  <string> TF session e.g. -s grpc://localhost:2222 (defaults to default_session)
    -D  <string> pi operations to a device e.g. -D /job:worker/task:0/gpu:0 
 -----------------------------------------------------''' %sys.argv[0]
-    options, args = getopt.getopt(sys.argv[1:],'hd:p:s:D:')
+    options, args = getopt.getopt(sys.argv[1:],'hi:d:p:s:D:')
     dims = None 
     pos = None 
+    niter = 50
     session = tf.get_default_session()
     dev = None
     for option, value in options:
         if option == '-h':
             print usage
             return
+        elif option == '-i':
+            niter = eval(value) 
         elif option == '-d':
             dims = eval(value) 
         elif option == '-p':
@@ -161,7 +164,7 @@ Options:
         x2 = tf.placeholder(tf.float64)
         ws = tf.placeholder(tf.float64)
         
-        imad_op = imad(x1,x2,ws)    
+        imad_op = imad(x1,x2,ws,niter)    
 
     img1,_,_,_,_,_,_ = read_image(fn1,dims=dims,pos=pos)
     img2,cols,rows,bands,inDataset,x0,y0 = read_image(fn2,dims=dims,pos=pos)
@@ -197,7 +200,7 @@ Options:
     outBand = outDataset.GetRasterBand(bands+1)
     outBand.WriteArray(chisqr,0,0) 
     outBand.FlushCache()
-    print 'MAD variatess written to: %s'%outfn   
+    print 'MAD variates written to: %s'%outfn   
     print 'elapsed time: %s'%str(time.time()-start)
     outDataset = None
     

@@ -9,7 +9,8 @@
 
 import auxil.supervisedclass as sc
 import auxil.readshp as rs
-import gdal, os, time, sys, getopt
+import  os, time, sys, getopt
+from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
 import matplotlib.pyplot as plt
 import numpy as np

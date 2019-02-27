@@ -86,6 +86,7 @@ RUN ln -s $(which ${PYTHON}) /usr/local/bin/python
 #   tf-nightly-gpu
 # Set --build-arg TF_PACKAGE_VERSION=1.11.0rc0 to install a specific version.
 # Installs the latest version by default.
+ENV Rebuild 27.02.19
 ARG TF_PACKAGE=tf-nightly-gpu
 ARG TF_PACKAGE_VERSION=
 RUN ${PIP} install ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
@@ -110,12 +111,11 @@ RUN     ${PIP} install ipyleaflet
 RUN     jupyter nbextension enable --py --sys-prefix ipyleaflet
 RUN     ${PIP} install ipyparallel
 
-RUN     ${PIP} install shapely
-
 EXPOSE 2222
-RUN apt-get install -y python-gdal libgdal-dev gdal-bin 
-RUN ${PIP} install --upgrade tensorflow-probability
-RUN ${PIP} install scipy
+RUN     apt-get install -y python-gdal libgdal-dev gdal-bin 
+RUN     ${PIP} install tensorflow-probability==0.5.0
+RUN     ${PIP} install scipy
+RUN     ${PIP} install shapely
 
 # install mlpy (with MaximumLikelihoodC and LibSvm)
 RUN     apt-get install -y libgsl0-dev
@@ -161,7 +161,10 @@ COPY    Chapter6.ipynb /home/Chapter6.ipynb
 COPY    Chapter7.ipynb /home/Chapter7.ipynb
 COPY    Chapter8.ipynb /home/Chapter8.ipynb
 COPY    Chapter9.ipynb /home/Chapter9.ipynb
+COPY    zfl2019.ipynb /home/zfl2019.ipynb
+COPY    testgpucpu.ipynb /home/testgpucpu.ipynb
 
 RUN ${PYTHON} -m ipykernel.kernelspec
 
-CMD ["bash", "-c", "source /etc/bash.bashrc && jupyter notebook --notebook-dir=/home --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token=''"] 
+CMD ["bash", "-c", "source /etc/bash.bashrc && jupyter notebook --notebook-dir=/home --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token=''"]
+#CMD  ["/bin/bash"] 
