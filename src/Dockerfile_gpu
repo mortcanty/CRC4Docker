@@ -86,7 +86,7 @@ RUN ln -s $(which ${PYTHON}) /usr/local/bin/python
 #   tf-nightly-gpu
 # Set --build-arg TF_PACKAGE_VERSION=1.11.0rc0 to install a specific version.
 # Installs the latest version by default.
-ENV Rebuild 27.02.19
+ENV Rebuild 01.03.19
 ARG TF_PACKAGE=tf-nightly-gpu
 ARG TF_PACKAGE_VERSION=
 RUN ${PIP} install ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
@@ -112,7 +112,7 @@ RUN     jupyter nbextension enable --py --sys-prefix ipyleaflet
 RUN     ${PIP} install ipyparallel
 
 EXPOSE 2222
-RUN     apt-get install -y python-gdal libgdal-dev gdal-bin 
+RUN     apt-get update && apt-get install -y python-gdal libgdal-dev gdal-bin 
 RUN     ${PIP} install tensorflow-probability==0.5.0
 RUN     ${PIP} install scipy
 RUN     ${PIP} install shapely

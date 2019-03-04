@@ -13279,23 +13279,19 @@ a.anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Training-data-separability">Training data separability<a class="anchor-link" href="#Training-data-separability">&#182;</a></h2><p>Bayes' Rule
-$$
-Pr(k\mid g) = { p(g\mid k) Pr(k)\over p(g) }
-$$</p>
-<p>The Bayes error for a binary classifier:</p>
-$$
-\epsilon = \int\min[\ Pr(1\mid g),Pr(2\mid g)\ ]p(g)dg = \int\min[\ p(g\mid 1)Pr(1),p(g\mid 2)Pr(2)\ ]dg.
-$$<p>If the two probability densities are assumed to be Gaussian, we get</p>
-$$
-\epsilon\le\epsilon_B =\sqrt{Pr(1)Pr(2)}\int \sqrt{p(g\mid 1)p(g\mid 2)}\ dg = \sqrt{Pr(1)Pr(2)}\ e^{-B},
-$$<p>where the Bhattacharyya distance between is:</p>
-$$
-B = {1\over 8}(\mu_2-\mu_1)^\top \left[{\Sigma_1+\Sigma_2\over 2}\right]^{-1} (\mu_2-\mu_1)
-+{1\over 2}\log\left({\left|\Sigma_1+\Sigma_2\right|/2\over \sqrt{|\Sigma_1||\Sigma_2|}}\right).
-$$<p>Larger values of $B$ imply smaller Bayes error. The Jeffries-Matusita separability measure is defined in terms of $B$ as</p>
-$$
-J = 2(1-e^{-B})
+<h2 id="Bayes-Maximum-Likelihood-Classifier-(parametric-model)">Bayes Maximum Likelihood Classifier (parametric model)<a class="anchor-link" href="#Bayes-Maximum-Likelihood-Classifier-(parametric-model)">&#182;</a></h2><h4 id="Decision-rule">Decision rule<a class="anchor-link" href="#Decision-rule">&#182;</a></h4>$$
+  g \hbox{ is in class } k\hbox{ provided } Pr(k\mid g) \ge Pr(j\mid g)\hbox{  for all } j=1\dots K
+$$<h4 id="Bayes'-Rule">Bayes' Rule<a class="anchor-link" href="#Bayes'-Rule">&#182;</a></h4>$$
+Pr(k\mid g) =\ \ ? \quad\to \quad Pr(k\mid g) \approx Pr(k) \quad\to \quad  Pr(k\mid g) = {p(g\mid k)\over p(g)} Pr(k)
+$$<h4 id="All-priors-equal">All priors equal<a class="anchor-link" href="#All-priors-equal">&#182;</a></h4>$$
+  g \hbox{ is in class } k\hbox{ provided } p(g\mid k) \ge p(g\mid j)\hbox{  for all } j=1\dots K
+$$<h4 id="Gaussian-model-assumption">Gaussian model assumption<a class="anchor-link" href="#Gaussian-model-assumption">&#182;</a></h4>$$
+p(g\mid k)={1\over (2\pi)^{N/2}\vert\Sigma_k\vert^{1/2}}\exp\left(
+-{1\over 2} (g-\mu_k)^\top \Sigma_k^{-1} (g-\mu_k) \right).
+$$<h4 id="Taking-logarithm-and-ignoring-class-independent-terms">Taking logarithm and ignoring class-independent terms<a class="anchor-link" href="#Taking-logarithm-and-ignoring-class-independent-terms">&#182;</a></h4>$$
+ g \hbox{ is in class } k\hbox{ provided } d_k(g) \ge d_j(g)\hbox{ for all } j=1\dots K.
+$$<h4 id="where">where<a class="anchor-link" href="#where">&#182;</a></h4>$$
+d_k(g) = -\log\vert\Sigma_k\vert - (g-\mu_k)^\top \Sigma_k^{-1} (g-\mu_k).
 $$
 </div>
 </div>
@@ -13303,9 +13299,55 @@ $$
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Bayes-Maximum-Likeliood-Classifier-(parametric-model)">Bayes Maximum Likeliood Classifier (parametric model)<a class="anchor-link" href="#Bayes-Maximum-Likeliood-Classifier-(parametric-model)">&#182;</a></h2>
+<h2 id="Training-data-separability">Training data separability<a class="anchor-link" href="#Training-data-separability">&#182;</a></h2><h4 id="The-Bayes-error-for-a-binary-classifier:">The Bayes error for a binary classifier:<a class="anchor-link" href="#The-Bayes-error-for-a-binary-classifier:">&#182;</a></h4>$$
+\epsilon = \int\min[\ Pr(1\mid g),Pr(2\mid g)\ ]p(g)dg = \int\min[\ p(g\mid 1)Pr(1),p(g\mid 2)Pr(2)\ ]dg.
+$$<h4 id="If-the-two-probability-densities-are-assumed-to-be-Gaussian,-we-get">If the two probability densities are assumed to be Gaussian, we get<a class="anchor-link" href="#If-the-two-probability-densities-are-assumed-to-be-Gaussian,-we-get">&#182;</a></h4>$$
+\epsilon\le\epsilon_B =\sqrt{Pr(1)Pr(2)}\int \sqrt{p(g\mid 1)p(g\mid 2)}\ dg = \sqrt{Pr(1)Pr(2)}\ e^{-B},
+$$<h4 id="where-the-Bhattacharyya-distance-between-is:">where the Bhattacharyya distance between is:<a class="anchor-link" href="#where-the-Bhattacharyya-distance-between-is:">&#182;</a></h4>$$
+B = {1\over 8}(\mu_2-\mu_1)^\top \left[{\Sigma_1+\Sigma_2\over 2}\right]^{-1} (\mu_2-\mu_1)
++{1\over 2}\log\left({\left|\Sigma_1+\Sigma_2\right|/2\over \sqrt{|\Sigma_1||\Sigma_2|}}\right).
+$$<h4 id="Larger-values-of-$B$-imply-smaller-Bayes-error.-The-Jeffries-Matusita-separability-measure-is-defined-in-terms-of-$B$-as">Larger values of $B$ imply smaller Bayes error. The Jeffries-Matusita separability measure is defined in terms of $B$ as<a class="anchor-link" href="#Larger-values-of-$B$-imply-smaller-Bayes-error.-The-Jeffries-Matusita-separability-measure-is-defined-in-terms-of-$B$-as">&#182;</a></h4>$$
+J = 2(1-e^{-B})
+$$
 </div>
 </div>
+</div></section></section><section><section>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">def</span> <span class="nf">jmsep</span><span class="p">(</span><span class="n">class1</span><span class="p">,</span><span class="n">class2</span><span class="p">,</span><span class="n">image</span><span class="p">,</span><span class="n">table</span><span class="p">):</span> 
+    <span class="sd">&#39;&#39;&#39; Jeffries-Matusita separability &#39;&#39;&#39;</span>    
+    <span class="c1">#  mean and covariance of class1</span>
+    <span class="n">table1</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;CLASS_ID&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">class1</span><span class="p">)))</span> 
+    <span class="n">m1</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="n">table1</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span> 
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">covariance</span><span class="p">(),</span><span class="n">table1</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span>
+    <span class="c1">#  mean and covariance of class2    </span>
+    <span class="n">table2</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;CLASS_ID&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">class2</span><span class="p">)))</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="n">table2</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">covariance</span><span class="p">(),</span><span class="n">table2</span><span class="p">,</span><span class="mi">15</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span>
+    <span class="c1">#  difference of means     </span>
+    <span class="n">m12</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>  
+    <span class="n">m12</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Array</span><span class="p">([</span><span class="n">m12</span><span class="o">.</span><span class="n">toList</span><span class="p">()])</span> <span class="c1"># makes 2D matrix  </span>
+    <span class="c1">#  first term in Bhattacharyya distance</span>
+    <span class="n">s12i</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">matrixInverse</span><span class="p">()</span>
+    <span class="n">B1</span> <span class="o">=</span> <span class="n">m12</span><span class="o">.</span><span class="n">matrixMultiply</span><span class="p">(</span><span class="n">s12i</span><span class="o">.</span><span class="n">matrixMultiply</span><span class="p">(</span><span class="n">m12</span><span class="o">.</span><span class="n">matrixTranspose</span><span class="p">()))</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+    <span class="c1">#  second term    </span>
+    <span class="n">ds1</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">matrixDeterminant</span><span class="p">()</span>
+    <span class="n">ds2</span> <span class="o">=</span> <span class="n">s2</span><span class="o">.</span><span class="n">matrixDeterminant</span><span class="p">()</span> 
+    <span class="n">ds12</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span><span class="o">.</span><span class="n">matrixDeterminant</span><span class="p">()</span>
+    <span class="n">B2</span> <span class="o">=</span> <span class="n">ds12</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">ds1</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">ds2</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1">#  add them together    </span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="n">B1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">B2</span><span class="p">)</span><span class="o">.</span><span class="n">project</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">toList</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="c1">#  J-M separability</span>
+    <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">exp</span><span class="p">()))</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
 </div></section></section><section><section>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
@@ -13341,20 +13383,6 @@ $$
 <h5 id="TensorFlow-is-not-(yet)-available-on-the-GEE">TensorFlow is not (yet) available on the GEE<a class="anchor-link" href="#TensorFlow-is-not-(yet)-available-on-the-GEE">&#182;</a></h5>
 </div>
 </div>
-</div></section></section><section><section>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pngs/fig3.png&quot;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">

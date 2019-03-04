@@ -65,6 +65,7 @@ RUN     rm auxil-1.0.tar.gz
 
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
+ADD     pngs /home/pngs
 ADD     auxil /home/auxil 
 ADD     imagery_initial /home/imagery
 COPY    Chapter1.ipynb /home/Chapter1.ipynb
@@ -78,6 +79,7 @@ COPY    Chapter7.ipynb /home/Chapter7.ipynb
 COPY    Chapter8.ipynb /home/Chapter8.ipynb
 COPY    Chapter9.ipynb /home/Chapter9.ipynb
 COPY    zfl2019.ipynb /home/zfl2019.ipynb
+COPY    tfintro.ipynb /home/tfintro.ipynb
 
 # ipython notebook startup script
 ADD     notebook.sh /
