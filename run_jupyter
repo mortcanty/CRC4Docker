@@ -1,4 +1,4 @@
 #!/bin/bash
-source venv/bin/activate
+source /home/mort/python/CRC4Docker/venv/bin/activate
 cd src
 jupyter notebook 

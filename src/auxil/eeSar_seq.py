@@ -2,8 +2,11 @@
 Created on 21.06.2018
 
 @author: mort
+
+ipywidget interface to the GEE for sequential SAR change detection
+
 '''
-import ee, time, warnings
+import ee, time, warnings, math
 import ipywidgets as widgets
 from IPython.display import display
 from ipyleaflet import (Map,DrawControl,TileLayer,basemaps,basemap_to_tiles,SplitMapControl)
@@ -29,15 +32,15 @@ def get_incidence_angle(image):
     if result is not None:
         return round(result,2)
     else:
-#      incomplete overlap        
+#      incomplete overlap, so use all of the image geometry        
         return round(ee.Image(image).select('angle') \
            .reduceRegion(ee.Reducer.mean(),maxPixels=1e9) \
            .get('angle') \
            .getInfo(),2)
 
-def get_vvvh(image):
-    ''' get 'VV' and 'VH' bands from sentinel-1 imageCollection '''
-    return image.select('VV','VH')
+def get_vvvh(image):   
+    ''' get 'VV' and 'VH' bands from sentinel-1 imageCollection and restore linear signal from db-values '''
+    return image.select('VV','VH').multiply(ee.Image.constant(math.log(10.0)/10.0)).exp()
 
 def get_image(current,image):
     ''' accumulate a single image from a collection of images '''
@@ -164,7 +167,7 @@ def on_run_button_clicked(b):
            collectionmean
     try:
         w_text.value = 'running...'
-        collection = ee.ImageCollection('COPERNICUS/S1_GRD_FLOAT') \
+        collection = ee.ImageCollection('COPERNICUS/S1_GRD') \
                   .filterBounds(poly) \
                   .filterDate(ee.Date(w_startdate.value), ee.Date(w_enddate.value)) \
                   .filter(ee.Filter.eq('transmitterReceiverPolarisation', ['VV','VH'])) \
@@ -209,13 +212,10 @@ def on_run_button_clicked(b):
 #      display mean of the full collection                
         collectionmean = collection.mean() \
                                .select(0) \
-                               .clip(poly) \
-                               .sqrt() 
-        collectionmean = collectionmean.where(collectionmean.gte(1),1) \
-                           .where(collectionmean.lte(0),0) 
+                               .clip(poly) 
         if len(m.layers)>1:
             m.remove_layer(m.layers[1])
-        m.add_layer(TileLayer(url=GetTileLayerUrl( collectionmean.visualize(min=0, max=1.0,opacity = 1))))
+        m.add_layer(TileLayer(url=GetTileLayerUrl( collectionmean.visualize(min=-25, max=10,opacity = 1))))
     except Exception as e:
         w_text.value =  'Error: %s'%e
 
@@ -247,10 +247,6 @@ w_preview.on_click(on_preview_button_clicked)
 
 def on_export_button_clicked(b):
     global w_exportname
-    point0 = ee.Geometry.Point(ee.List(poly.bounds().coordinates().get(0)).get(0))
-    point1 = ee.Geometry.Point(ee.List(poly.bounds().coordinates().get(0)).get(1))
-    point2 = ee.Geometry.Point(ee.List(poly.bounds().coordinates().get(0)).get(2))
-    point3 = ee.Geometry.Point(ee.List(poly.bounds().coordinates().get(0)).get(3))
     collection1 = ee.ImageCollection('COPERNICUS/S2') \
                     .filterBounds(poly) \
                     .filterDate(ee.Date(w_startdate.value),ee.Date(w_enddate.value)) \
