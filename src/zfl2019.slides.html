@@ -13312,81 +13312,6 @@ $$
 </div>
 </div>
 </div></section></section><section><section>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="k">def</span> <span class="nf">jmsep</span><span class="p">(</span><span class="n">class1</span><span class="p">,</span><span class="n">class2</span><span class="p">,</span><span class="n">image</span><span class="p">,</span><span class="n">table</span><span class="p">):</span> 
-    <span class="sd">&#39;&#39;&#39; Jeffries-Matusita separability &#39;&#39;&#39;</span>    
-<span class="c1">#  mean and covariance of class1</span>
-    <span class="n">table1</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;CLASS_ID&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">class1</span><span class="p">)))</span> 
-    <span class="n">m1</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="n">table1</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span> 
-    <span class="n">s1</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">covariance</span><span class="p">(),</span><span class="n">table1</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span>
-<span class="c1">#  mean and covariance of class2    </span>
-    <span class="n">table2</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;CLASS_ID&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">class2</span><span class="p">)))</span>
-    <span class="n">m2</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="n">table2</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span>
-    <span class="n">s2</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">covariance</span><span class="p">(),</span><span class="n">table2</span><span class="p">,</span><span class="mi">15</span><span class="p">)</span><span class="o">.</span><span class="n">toArray</span><span class="p">()</span>
-<span class="c1">#  difference of means     </span>
-    <span class="n">m12</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>  
-    <span class="n">m12</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Array</span><span class="p">([</span><span class="n">m12</span><span class="o">.</span><span class="n">toList</span><span class="p">()])</span> <span class="c1"># makes 2D matrix  </span>
-<span class="c1">#  first term in Bhattacharyya distance</span>
-    <span class="n">s12i</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">matrixInverse</span><span class="p">()</span>
-    <span class="n">B1</span> <span class="o">=</span> <span class="n">m12</span><span class="o">.</span><span class="n">matrixMultiply</span><span class="p">(</span><span class="n">s12i</span><span class="o">.</span><span class="n">matrixMultiply</span><span class="p">(</span><span class="n">m12</span><span class="o">.</span><span class="n">matrixTranspose</span><span class="p">()))</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
-<span class="c1">#  second term    </span>
-    <span class="n">ds1</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">matrixDeterminant</span><span class="p">()</span>
-    <span class="n">ds2</span> <span class="o">=</span> <span class="n">s2</span><span class="o">.</span><span class="n">matrixDeterminant</span><span class="p">()</span> 
-    <span class="n">ds12</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span><span class="o">.</span><span class="n">matrixDeterminant</span><span class="p">()</span>
-    <span class="n">B2</span> <span class="o">=</span> <span class="n">ds12</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">ds1</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">ds2</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="c1">#  add them together    </span>
-    <span class="n">B</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="n">B1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">B2</span><span class="p">)</span><span class="o">.</span><span class="n">project</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">toList</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-<span class="c1">#  J-M separability</span>
-    <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">exp</span><span class="p">()))</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div></section></section><section><section>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Band mean values for the training data, illustrating iteration over an ee.List object</span>
-<span class="k">def</span> <span class="nf">band_mean</span><span class="p">(</span><span class="n">current</span><span class="p">,</span><span class="n">prev</span><span class="p">):</span>
-    <span class="n">current</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
-    <span class="n">prev</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Dictionary</span><span class="p">(</span><span class="n">prev</span><span class="p">)</span>
-    <span class="n">trainData</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;trainData&#39;</span><span class="p">))</span>
-    <span class="n">class_id</span> <span class="o">=</span> <span class="n">prev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;class_id&#39;</span><span class="p">)</span>
-    <span class="n">means</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">List</span><span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;means&#39;</span><span class="p">))</span>
-    <span class="n">mu</span> <span class="o">=</span> <span class="n">trainData</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;CLASS_ID&#39;</span><span class="p">,</span><span class="n">class_id</span><span class="p">))</span><span class="o">.</span><span class="n">aggregate_mean</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Dictionary</span><span class="p">({</span> <span class="s1">&#39;trainData&#39;</span><span class="p">:</span><span class="n">trainData</span><span class="p">,</span><span class="s1">&#39;class_id&#39;</span><span class="p">:</span><span class="n">class_id</span><span class="p">,</span><span class="s1">&#39;means&#39;</span><span class="p">:</span><span class="n">means</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="p">})</span>
-
-<span class="k">def</span> <span class="nf">class_mean</span><span class="p">(</span><span class="n">trainData</span><span class="p">,</span><span class="n">class_id</span><span class="p">,</span><span class="n">bandNames</span><span class="p">):</span>
-    <span class="n">first</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Dictionary</span><span class="p">({</span><span class="s1">&#39;trainData&#39;</span><span class="p">:</span><span class="n">trainData</span><span class="p">,</span><span class="s1">&#39;class_id&#39;</span><span class="p">:</span><span class="nb">str</span><span class="p">(</span><span class="n">class_id</span><span class="p">),</span><span class="s1">&#39;means&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">List</span><span class="p">([])})</span>
-    <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Dictionary</span><span class="p">(</span><span class="n">bandNames</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">band_mean</span><span class="p">,</span><span class="n">first</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;means&#39;</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">run</span> <span class="n">scripts</span><span class="o">/</span><span class="n">classify</span> <span class="o">-</span><span class="n">h</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div></section></section><section><section>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
@@ -13403,13 +13328,21 @@ $$<h4 id="training-involves-finding-the-value-of-$\sigma$-which-minimizes-the-cl
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Feed-Forward-Neural-Network-(mixture-model)">Feed Forward Neural Network (mixture model)<a class="anchor-link" href="#Feed-Forward-Neural-Network-(mixture-model)">&#182;</a></h2>
+<h2 id="Feed-Forward-Neural-Network-(mixture-model)">Feed Forward Neural Network (mixture model)<a class="anchor-link" href="#Feed-Forward-Neural-Network-(mixture-model)">&#182;</a></h2><h3 id="Motivation-(for-two-classes-of-two-dimensional-observations)">Motivation (for two classes of two-dimensional observations)<a class="anchor-link" href="#Motivation-(for-two-classes-of-two-dimensional-observations)">&#182;</a></h3><h4 id="Discriminant-function">Discriminant function<a class="anchor-link" href="#Discriminant-function">&#182;</a></h4>$$
+I(g) = d_1(g) - d_2(g)
+$$$$
+g\ \hbox{  is class }\cases{1 &amp; if $I(g)\ge0$\cr 2 &amp; if $I(g)&lt;0$.}
+$$<h4 id="Simplest-discriminant">Simplest discriminant<a class="anchor-link" href="#Simplest-discriminant">&#182;</a></h4>$$
+I(g) = w_0 + w_1g_1+w_2g_2
+$$<h4 id="Decision-boundary-$I(g)=0)$">Decision boundary $I(g)=0)$<a class="anchor-link" href="#Decision-boundary-$I(g)=0)$">&#182;</a></h4>$$
+g_2 = -{w_1\over w_2}g_1-{w_0\over w_2},
+$$
 </div>
 </div>
 </div></section></section><section><section>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pngs/fig2.png&quot;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
@@ -13425,7 +13358,7 @@ $$<h4 id="training-involves-finding-the-value-of-$\sigma$-which-minimizes-the-cl
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[27]:</div>
+    <div class="prompt output_prompt">Out[21]:</div>
 
 
 
@@ -13444,9 +13377,18 @@ height=600
 </div>
 
 </div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="For-N-dimensional-observations-this-becomes-an-oriented-hyperplane">For N-dimensional observations this becomes an <em>oriented hyperplane</em><a class="anchor-link" href="#For-N-dimensional-observations-this-becomes-an-oriented-hyperplane">&#182;</a></h4>$$
+I(g) = w_0+w_1g_1+\dots+w_Ng_N = w^\top g+w_0
+$$<h4 id="This-can-be-represented-graphically-as-a-perceptron-or-artificial-neuron">This can be represented graphically as a <em>perceptron</em> or <em>artificial neuron</em><a class="anchor-link" href="#This-can-be-represented-graphically-as-a-perceptron-or-artificial-neuron">&#182;</a></h4>
+</div>
+</div>
+</div></section></section><section><section>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pngs/fig3.png&quot;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
@@ -13462,7 +13404,7 @@ height=600
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[28]:</div>
+    <div class="prompt output_prompt">Out[22]:</div>
 
 
 
@@ -13481,9 +13423,27 @@ height=600
 </div>
 
 </div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Some-jargon:">Some jargon:<a class="anchor-link" href="#Some-jargon:">&#182;</a></h4><p>$g_1\dots g_N$ <strong>input signals</strong></p>
+<p>$w_1\dots W_N$ <strong>synaptic weights</strong></p>
+<p>$w_0$ <strong>bias</strong></p>
+<p>$I(g)$ <strong>output signal</strong>, which is modified by a non-linear <strong>activation function</strong> such as</p>
+$$
+f(g) = {1\over 1 + e^{-I(g)}}
+$$<h4 id="For-just-two-Gaussian-classes,--$\Sigma_1=\Sigma_2$,-it-is-easy-to-show-(text,-Chapter-6)-that">For just two Gaussian classes,  $\Sigma_1=\Sigma_2$, it is easy to show (text, Chapter 6) that<a class="anchor-link" href="#For-just-two-Gaussian-classes,--$\Sigma_1=\Sigma_2$,-it-is-easy-to-show-(text,-Chapter-6)-that">&#182;</a></h4>$$
+Pr(1\mid g) = {p(g\mid 1)Pr(1)\over p(g\mid 1)Pr(1)+p(g\mid 2)pr(2)} = {1\over 1 + e^{-I(g)}} = f(g)
+$$<p>We expect that the output signal $f(g)$ of the neuron will not only discriminate
+between the two classes,  <strong>but also  that it will approximate the posterior
+class membership probability</strong> $Pr(1\mid g)$.</p>
+
+</div>
+</div>
+</div></section></section><section><section>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pngs/fig4.png&quot;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
@@ -13499,7 +13459,7 @@ height=600
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[29]:</div>
+    <div class="prompt output_prompt">Out[23]:</div>
 
 
 
@@ -13518,9 +13478,30 @@ height=600
 </div>
 
 </div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>There are $K$ neurons (the circles on the right), each of which calculates its own discriminant</strong></p>
+$$
+n_j(g)=f(I_j(g)),\  j=1\dots K.
+$$$$
+k = \arg\max_j n_j(g).
+$$<p><strong>For the $j$th neuron,</strong></p>
+$$
+w_j = (w_{0j},w_{1j}\dots w_{Nj})^\top,
+$$<p><strong>and, for the whole network,</strong></p>
+$$
+W = (w_1,w_2\dots w_K) = \pmatrix{ w_{01} &amp; w_{02} &amp; \cdots &amp; w_{0K}\cr
+                                                   w_{11} &amp; w_{12} &amp; \cdots &amp; w_{1K}\cr
+                                                   \vdots &amp; \vdots &amp; \ddots &amp; \vdots\cr
+                                                   w_{N1} &amp; w_{N2} &amp; \cdots &amp; w_{NK} },
+$$
+</div>
+</div>
+</div></section></section><section><section>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pngs/fig5.png&quot;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
@@ -13536,7 +13517,7 @@ height=600
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[26]:</div>
+    <div class="prompt output_prompt">Out[24]:</div>
 
 
 
@@ -13554,6 +13535,126 @@ height=600
 </div>
 </div>
 
+</div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Input</strong></p>
+$$
+ g(\nu) = (1,g_1(\nu)\dots g_N(\nu))^\top.
+$$<p><strong>Hidden layer</strong>
+$$
+n(\nu)=(1,n_1(\nu)\dots n_L(\nu))^\top
+$$</p>
+$$
+n_j(\nu) = f(I^h_j(g(\nu))),\quad j=1\dots L.
+$$$$
+I^h_j(g(\nu)) =w^{h\top}_j g(\nu),
+$$$$
+n(\nu) = \pmatrix{ 1 \cr f(W^{h\top} g(\nu))}
+$$<p><strong>Output layer</strong></p>
+$$
+m(\nu) = f(W^{o\top}n(\nu))
+$$<p><strong>Softmax</strong></p>
+$$
+m_k(\nu) = {e^{I^o_k(n(\nu))}\over  e^{I^o_1(n(\nu))}+e^{I^o_2(n(\nu))}+\dots + e^{I^o_K( n(\nu))}}
+$$<p><strong>where</strong></p>
+$$
+I^o_k(n(\nu)) = w^{o\top}_k n(\nu), \quad k=1\dots K
+$$
+</div>
+</div>
+</div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Bishop (1995):</strong></p>
+<p><strong>Two-layer, feed-forward networks can approximate arbitrarily well any functional continuous mapping from one
+finite dimensional space to another, provided the number of hidden units is sufficiently large. ...
+An important corollary of this result is, that in the context of a classification problem, networks
+with sigmoidal non-linearities and two layers of weights can approximate any decision boundary to
+arbitrary accuracy. ... More generally, the capability of such networks to approximate general smooth
+functions allows them to model posterior probabilities of class membership.</strong></p>
+
+</div>
+</div>
+</div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Cost-function-(catagorical-cross-entropy)">Cost function (catagorical cross-entropy)<a class="anchor-link" href="#Cost-function-(catagorical-cross-entropy)">&#182;</a></h3><p><strong>Training set</strong></p>
+$$
+\mathcal{T}=\{(g(\nu),\ell(\nu))\mid \nu=1\dots m\},
+$$<p><strong>"One-hot" encoding</strong></p>
+$$
+\ell(\nu) = (0\dots 0,1,0\dots 0)^\top
+$$<p><strong>Training: Maximize the probability of observing the earch training example (definition of conditional proabability)</strong></p>
+$$
+Pr(g(\nu),\ell(\nu)) = Pr(\ell(\nu)\mid g(\nu))\Pr(g(\nu)) = \prod_{k=1}^K [\ m_k(g(\nu))\ ]^{\ell_k(\nu)}
+$$<p><strong>for example:</strong></p>
+$$
+Pr((1,0\dots 0)^\top \mid g) = m_1(g)^1 \cdot m_2(g)^0 \cdots m_K( g)^0 = m_1(g),
+$$
+</div>
+</div>
+</div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Take negative logarithm, and drop terms independent of the synaptic weights</strong></p>
+$$
+E(W^h,W^o) = - \sum_{k=1}^K  \ell_k(\nu)\log [m_k(g(\nu))] \to \min
+$$<p><strong>In vector notation</strong></p>
+$$
+E(\nu) = - \ell(\nu)^\top\log[m(\nu)]
+$$
+</div>
+</div>
+</div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Backpropagation-algorithm-(stochastic)">Backpropagation algorithm (stochastic)<a class="anchor-link" href="#Backpropagation-algorithm-(stochastic)">&#182;</a></h4><ol>
+<li><p>Initialize the synaptic weights with random numbers and set
+$\nu$ equal to a random integer in the interval $[1,m]$.</p>
+</li>
+<li><p>Choose training pair $(g(\nu),\ell(\nu))$ and
+determine the output response $m(\nu)$ of the network.</p>
+</li>
+<li><p>For $k=1\dots K$ and $j=0\dots L$, replace $w^o_{jk}$ with
+$w^o_{jk}-\eta{\partial E(\nu)\over\partial w^o_{jk}}$.</p>
+</li>
+<li><p>For $j=1\dots L$ and $i=0\dots N$, replace $w^h_{ij}$ with
+$w^h_{ij}-\eta{\partial E(\nu)\over\partial w^h_{ij}}$.</p>
+</li>
+<li><p>If $\sum_\nu E(\nu)$ ceases to change significantly, stop,
+otherwise set $\nu$ equal to a new random integer in $[1,m]$ and go to step 2.</p>
+</li>
+</ol>
+<p>This is a <strong>gradient descent</strong> algorithm. If we evaluate the parial derivatives we get</p>
+
+</div>
+</div>
+</div></section></section><section><section>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>For step 2:</p>
+$$
+W^o(\nu+1) = W^o(\nu) + \eta\ n(\nu) \delta^o(\nu)^\top
+$$$$
+\delta^o(\nu) = \ell(\nu)- m(\nu)
+$$<p>For step 3:</p>
+$$
+W^h(\nu+1) = W^h(\nu) + \eta \ g(\nu)\delta^h(\nu)^\top
+$$<p>where</p>
+$$
+\pmatrix{0\cr \delta^h(\nu)} =
+n(\nu)\cdot(1-n(\nu))\cdot\big( W^{o}\delta^o(\nu)\big) \quad {\bf Backpropagation!}
+$$<p><strong>Note: In order to calculate the derivatives, the signal must first be fed through the network.</strong></p>
+
+</div>
+</div>
 </div></section></section><section><section>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">

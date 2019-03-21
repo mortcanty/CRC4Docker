@@ -9,7 +9,8 @@
 
 import auxil.readshp as rs
 from ipyparallel import Client
-import gdal, time, sys, getopt
+from osgeo import gdal
+import time, sys, getopt
 from osgeo.gdalconst import GA_ReadOnly
 import numpy as np
 
