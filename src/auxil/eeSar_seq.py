@@ -277,14 +277,14 @@ def on_export_button_clicked(b):
                     .filterMetadata('CLOUDY_PIXEL_PERCENTAGE','less_than',1.0) 
     count1 = collection1.size().getInfo()
     if count1>0:
-#      use sentinel-2 as background                        
+#      use sentinel-2 as video background                        
         background = ee.Image(collection1.first()) \
                                .clip(poly) \
                                .select('B8') \
                                .divide(5000)    
     else:
-#      use temporal averaged sentinel-1                                                                        
-        background = collectionmean          
+#      use temporal averaged sentinel-1 instead                                                                       
+        background = collectionmean.add(15).divide(15)         
     cmaps = ee.Image.cat(cmap,smap,fmap,bmap,background).rename(['cmap','smap','fmap']+timestamplist1[1:]+['background'])                
     assexport = ee.batch.Export.image.toAsset(cmaps,
                                 description='assetExportTask', 
