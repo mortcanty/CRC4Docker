@@ -216,7 +216,7 @@ def on_run_button_clicked(b):
             mean_incidence = get_incidence_angle(collection.first())
             txt += 'Mean incidence angle: %f'%mean_incidence
         else:
-            txt += 'Mean incidence angle: (select a rel. orbit)'
+            txt += 'Mean incidence angle: (select one rel. orbit)'
         w_text.value = txt
         pcollection = collection.map(get_vvvh)
         pList = pcollection.toList(100)   

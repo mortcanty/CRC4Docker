@@ -4,6 +4,7 @@ auxil/__init__.py
 auxil/auxil1.py
 auxil/congrid.py
 auxil/eeMad.py
+auxil/eeMad_run.py
 auxil/eeSar_seq.py
 auxil/eeWishart.py
 auxil/eepca.py
