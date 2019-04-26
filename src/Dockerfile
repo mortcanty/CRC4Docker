@@ -18,31 +18,17 @@ RUN apt-get update && apt-get install -y \
     python-pip \
     git 
 
-# ipython notebook
+# install requirements
 RUN     pip install --upgrade pip
-RUN     pip install jupyter==1.0.0
-RUN     pip install ipyleaflet==0.9.0
-RUN     jupyter nbextension enable --py --sys-prefix ipyleaflet
+COPY    requirements.txt /home 
+RUN     pip install -r /home/requirements.txt
 
-# tensorflow
-RUN     pip install tensorflow
-
-# enable parallel computing
-RUN     pip install ipyparallel
-RUN     jupyter notebook --generate-config
-RUN     sed -i "/# Configuration file for jupyter-notebook./a  \ 
-                c.NotebookApp.server_extensions.append('ipyparallel.nbextension')" \
-            /root/.jupyter/jupyter_notebook_config.py
-
-# install python environment for crc4 scripts
-RUN     apt-get install -y python-numpy python-scipy \
-         python-gdal  libgdal-dev gdal-bin python-shapely \
-         python-opencv
-         
-RUN     pip install --upgrade matplotlib    
+# special cases
+RUN     apt-get install -y python-gdal  libgdal-dev gdal-bin python-shapely
 
 # install mlpy (with MaximumLikelihoodC and LibSvm)
 RUN     apt-get install -y libgsl0-dev
+RUN     ln -s /usr/lib/x86_64-linux-gnu/libgsl.so /usr/lib/x86_64-linux-gnu/libgsl.so.0
 ADD     mlpy-3.5.0 /mlpy-3.5.0
 WORKDIR /mlpy-3.5.0
 RUN     python setup.py install
@@ -56,18 +42,6 @@ RUN     rm prov_means.c
 
 EXPOSE 8888
 
-# setup for earthengine
-RUN     pip install pyasn1 --upgrade
-RUN     pip install --upgrade setuptools && \
-        pip install google-api-python-client && \
-        pip install --upgrade oauth2client && \
-        pip install pyCrypto && \
-        apt-get install -y libssl-dev
-RUN     pip install earthengine-api
-
-# opencv
-RUN     pip install opencv-python
-
 # install auxil
 COPY    dist/auxil-1.0.tar.gz /home/auxil-1.0.tar.gz
 RUN     tar -xzvf auxil-1.0.tar.gz
@@ -76,9 +50,6 @@ RUN     python setup.py install
 WORKDIR /home
 RUN     rm -rf auxil-1.0
 RUN     rm auxil-1.0.tar.gz
-
-# SPy
-RUN     pip install spectral
 
 # textbook scripts, notebooks and images
 ADD     scripts /home/scripts
