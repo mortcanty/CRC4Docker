@@ -9,7 +9,10 @@ ipywidget interface to the GEE for sequential SAR change detection
 import ee, time, warnings, math
 import ipywidgets as widgets
 from IPython.display import display
-from ipyleaflet import (Map,DrawControl,TileLayer,basemaps,basemap_to_tiles,SplitMapControl)
+from ipyleaflet import (Map,DrawControl,TileLayer,
+                        basemaps,basemap_to_tiles,
+                        LayersControl,
+                        SplitMapControl)
 from auxil.eeWishart import omnibus
 
 ee.Initialize()
@@ -63,9 +66,9 @@ def handle_draw(self, action, geo_json):
         coords =  geo_json['geometry']['coordinates']
         poly = ee.Geometry.Polygon(coords)
         w_preview.disabled = True
-        w_export.disabled = True
+        w_export_ass.disabled = True
         
-dc = DrawControl(polyline={},circle={})
+dc = DrawControl(polyline={},circlemarker={})
 dc.on_draw(handle_draw)
 
 def GetTileLayerUrl(ee_image_object):
@@ -120,7 +123,7 @@ w_median = widgets.Checkbox(
 )
 w_Q = widgets.Checkbox(
     value=True,
-    description='Use -2lnQ',
+    description='Use Q',
     disabled=False
 )
 w_significance = widgets.BoundedFloatText(
@@ -148,18 +151,18 @@ w_text = widgets.Textarea(
 
 w_run = widgets.Button(description="Run")
 w_preview = widgets.Button(description="Preview",disabled=True)
-w_export = widgets.Button(description='Export to assets',disabled=True)
+w_export_ass = widgets.Button(description='Export to assets',disabled=True)
 w_dates = widgets.HBox([w_relativeorbitnumber,w_startdate,w_enddate])
 w_orbit = widgets.HBox([w_orbitpass,w_platform,w_changemap,w_opacity])
-w_exp = widgets.HBox([w_export,w_exportname])
+w_exp_ass = widgets.HBox([w_export_ass,w_exportname])
 w_signif = widgets.HBox([w_significance,w_median,w_Q])
-w_rse = widgets.HBox([w_run,w_preview,w_exp])
+w_rse = widgets.HBox([w_run,w_preview,w_exp_ass])
 
 box = widgets.VBox([w_text,w_dates,w_orbit,w_signif,w_rse])
 
 def on_widget_change(b):
     w_preview.disabled = True
-    w_export.disabled = True
+    w_export_ass.disabled = True
 
 w_orbitpass.observe(on_widget_change,names='value')
 w_platform.observe(on_widget_change,names='value')
@@ -210,7 +213,7 @@ def on_run_button_clicked(b):
         relativeorbitnumbers = map(int,ee.List(collection.aggregate_array('relativeOrbitNumber_start')).getInfo())
         rons = list(set(relativeorbitnumbers))
         txt = 'Images found: %i, platform: %s \n'%(count,w_platform.value)
-        txt += 'Acquisition dates: '+timestamplist[0]+'...'+timestamplist[-1]+'\n'
+        txt += 'Acquisition dates: %s\n'%str(timestamplist)
         txt += 'Relative orbit numbers: '+str(rons)+'\n'
         if len(rons)==1:
             mean_incidence = get_incidence_angle(collection.first())
@@ -222,6 +225,7 @@ def on_run_button_clicked(b):
         pList = pcollection.toList(100)   
         first = ee.Dictionary({'imlist':ee.List([]),'poly':poly}) 
         imList = ee.Dictionary(pList.iterate(clipList,first)).get('imlist')
+#      run the algorithm        
         result = ee.Dictionary(omnibus(imList,w_significance.value,w_median.value,w_Q.value))
         w_preview.disabled = False
 #      display mean of the full collection                
@@ -230,7 +234,7 @@ def on_run_button_clicked(b):
                                .clip(poly) 
         if len(m.layers)>1:
             m.remove_layer(m.layers[1])
-        m.add_layer(TileLayer(url=GetTileLayerUrl( collectionmean.visualize(min=-20, max=5,opacity = 1))))
+        m.add_layer(TileLayer(url=GetTileLayerUrl( collectionmean.visualize(min=-20, max=5,opacity = w_opacity.value))))
     except Exception as e:
         w_text.value =  'Error: %s'%e
 
@@ -248,7 +252,6 @@ def on_preview_button_clicked(b):
     downloadpath = cmaps.getDownloadUrl({'scale':10})
     w_text.value = 'Download change maps from this URL:\n'+downloadpath+'\nNote: This may be unreliable'
     
-    opacity = w_opacity.value
     if w_changemap.value=='First':
         mp = smap 
         mx = count
@@ -260,12 +263,12 @@ def on_preview_button_clicked(b):
         mx = count/2
     if len(m.layers)>1:
         m.remove_layer(m.layers[1])
-    m.add_layer(TileLayer(url=GetTileLayerUrl( mp.visualize(min=0, max=mx, palette=jet,opacity = opacity))))
-    w_export.disabled = False
+    m.add_layer(TileLayer(url=GetTileLayerUrl( mp.visualize(min=0, max=mx, palette=jet,opacity = w_opacity.value))))
+    w_export_ass.disabled = False
     
 w_preview.on_click(on_preview_button_clicked)   
 
-def on_export_button_clicked(b):
+def on_export_ass_button_clicked(b):
     global w_exportname
     collection1 = ee.ImageCollection('COPERNICUS/S2') \
                     .filterBounds(ee.Geometry.Point(coords.get(0))) \
@@ -315,7 +318,7 @@ def on_export_button_clicked(b):
     w_text.value += '\n Exporting metadata to Drive/EarthEngineImages/%s\n task id: %s'%(fileNamePrefix,str(gdexport.id))            
     gdexport.start()                         
     
-w_export.on_click(on_export_button_clicked) 
+w_export_ass.on_click(on_export_ass_button_clicked) 
 
 def run():
     global m,dc,center
@@ -326,6 +329,7 @@ def run():
     sm_control = SplitMapControl(left_layer=osm,right_layer=mb)
     m.add_control(dc)
     m.add_control(sm_control)
+    m.add_control(LayersControl())
     display(m)
     display(box)
     
