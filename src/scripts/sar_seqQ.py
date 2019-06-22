@@ -26,7 +26,8 @@ def PV((fns,n,cols,rows,bands)):
     '''Return p-values for change indices R^ell_j'''        
     import numpy as np
     from osgeo.gdalconst import GA_ReadOnly
-    import sys, gdal
+    from osgeo import gdal
+    import sys
     from scipy import stats  
     def getmat(fn,cols,rows,bands):
     #  read 9- 4- 3- 2- or 1-band preprocessed polarimetric matrix files 
@@ -239,7 +240,8 @@ def getpvQ(lnQ,bands,k,n):
                        
 def main():  
     import numpy as np
-    import os, sys, time, getopt, gdal
+    import os, sys, time, getopt
+    from osgeo import gdal
     from auxil import subset
     from ipyparallel import Client
     from osgeo.gdalconst import GA_ReadOnly, GDT_Byte
