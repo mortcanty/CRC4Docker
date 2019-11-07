@@ -105,6 +105,6 @@ traittypes==0.2.1
 uritemplate==3.0.0
 wcwidth==0.1.7
 webencodings==0.5.1
-Werkzeug==0.15.2
+Werkzeug==0.15.3
 widgetsnbextension==3.4.2
 xarray==0.10.9
