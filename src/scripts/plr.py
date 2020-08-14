@@ -96,8 +96,6 @@ def plr(infile,nitr=3):
     print '--done------------------------'      
     
 def main():
-    usage = '''Usage: python %s [-h] [-i iterations] probfileName
-            '''%sys.argv[0]
     usage = '''
 Usage:
 ------------------------------------------------

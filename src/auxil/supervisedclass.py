@@ -11,7 +11,7 @@
 
 import auxil1
 import numpy as np  
-import tensorflow as tf
+import tensorflow as tf 
 from tensorflow.keras import layers
 from scipy.optimize import minimize_scalar
 from mlpy import MaximumLikelihoodC, LibSvm   
@@ -23,7 +23,7 @@ class Maxlike(MaximumLikelihoodC):
     def __init__(self,Gs,ls): 
         MaximumLikelihoodC.__init__(self)
         self._K = ls.shape[1] 
-        self._Gs = Gs 
+        self._Gs = Gs  
         self._N = Gs.shape[1]
         self._ls = ls
           
