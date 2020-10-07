@@ -15,7 +15,7 @@ cryptography==2.6.1
 cycler==0.10.0
 decorator==4.4.0
 defusedxml==0.5.0
-earthengine-api==0.1.175
+earthengine-api==0.1.232
 entrypoints==0.3
 enum34==1.1.6
 funcsigs==1.0.2
