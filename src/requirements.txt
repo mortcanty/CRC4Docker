@@ -11,7 +11,7 @@ cachetools==3.1.0
 cffi==1.12.2
 chardet==2.3.0
 configparser==3.7.4
-cryptography==2.6.1
+cryptography==3.2
 cycler==0.10.0
 decorator==4.4.0
 defusedxml==0.5.0
