@@ -83,7 +83,7 @@ pytz==2019.1
 pyxdg==0.25
 pyzmq==18.0.1
 qtconsole==4.4.3
-rsa==4.0
+rsa==4.7
 scandir==1.10.0
 scipy==0.18.1
 SecretStorage==2.3.1
