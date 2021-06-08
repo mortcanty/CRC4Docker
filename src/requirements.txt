@@ -64,7 +64,7 @@ pathlib2==2.3.3
 pbr==5.1.3
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==4.0.0
+Pillow==8.2.0
 prometheus-client==0.6.0
 prompt-toolkit==1.0.16
 protobuf==3.7.1
